@@ -9,6 +9,6 @@ docker_build:
 	docker build -t "ccc" .
 
 test: ccc
-	${RUN} ./test.sh
+	${RUN} ./test.sh ${ARG} 6 '2+2+2'
 
 .PHONY: test clean

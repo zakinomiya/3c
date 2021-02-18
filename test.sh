@@ -1,4 +1,4 @@
-.#!/bin/ash
+#!/bin/ash
 
 assert() {
   expected="$1"
@@ -17,5 +17,7 @@ assert() {
     exit 1
   fi
 }
+
+assert $@
 
 echo "OK"
