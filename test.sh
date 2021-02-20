@@ -7,7 +7,7 @@ assert() {
   ./ccc "$input" > tmp.s
 
   cc -o tmp tmp.s
-  ./tmp 
+  test ./tmp && ./tmp 
   actual="$?"
 
   if [ "$actual" = "$expected" ]; then
@@ -18,6 +18,9 @@ assert() {
   fi
 }
 
-assert $@
+IFS=","
+while read expected expression || [ -n "${LINE}" ]; do
+  assert ${expected} ${expression}
+done < "in.csv" 
 
 echo "OK"
