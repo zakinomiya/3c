@@ -4,7 +4,7 @@ assert() {
   expected="$1"
   input="$2"
 
-  ./ccc "$input" > tmp.s
+  ./ccc "$input" > tmp_${input}.s
 
   cc -o tmp tmp.s
   test ./tmp && ./tmp 
