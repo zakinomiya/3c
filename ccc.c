@@ -38,6 +38,7 @@ struct Node {
 };
 
 Node *expr(void);
+Node *unary(void);
 void gen(Node *node);
 
 Token *token;
@@ -119,7 +120,8 @@ Token *tokenize(char *p) {
     }
 
     // if next letter is '+' or '-' create token and set the new one as current
-    if (*p == '+' || *p == '-') {
+    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' ||
+        *p == ')') {
       cur = new_token(TK_RESERVED, cur, p++);
       continue;
     }
@@ -187,13 +189,13 @@ Node *primary() {
 }
 
 Node *mul() {
-  Node *node = primary();
+  Node *node = unary();
 
   for (;;) {
     if (consume('*')) {
-      node = new_node(ND_MUL, node, primary());
+      node = new_node(ND_MUL, node, unary());
     } else if (consume('/')) {
-      node = new_node(ND_DIV, node, primary());
+      node = new_node(ND_DIV, node, unary());
     } else {
       return node;
     }
@@ -220,7 +222,7 @@ void gen(Node *node) {
       printf("  sub rax, rdi\n");
       break;
     case ND_MUL:
-      printf("  mul rax, rdi\n");
+      printf("  imul rax, rdi\n");
       break;
     case ND_DIV:
       printf("  cqo\n");
@@ -242,5 +244,14 @@ Node *expr() {
       return node;
     }
   }
+}
+
+Node *unary() {
+  if (consume('+')) {
+    return primary();
+  } else if (consume('-')) {
+    return new_node(ND_SUB, new_node_num(0), primary());
+  }
+  return primary();
 }
 

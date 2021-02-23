@@ -11,4 +11,7 @@ docker_build:
 test: ccc
 		${RUN} ./test.sh
 
+clean:
+	rm tmp* ccc
+
 .PHONY: test clean

@@ -1,13 +1,13 @@
-#!/bin/ash
+#!/bin/bash
 
 assert() {
   expected="$1"
   input="$2"
 
-  ./ccc "$input" > tmp_${input}.s
+  ./ccc "${input}" > tmp_${input}.s
 
-  cc -o tmp tmp.s
-  test ./tmp && ./tmp 
+  cc -o tmp tmp_${input}.s
+  ./tmp 
   actual="$?"
 
   if [ "$actual" = "$expected" ]; then
@@ -21,6 +21,6 @@ assert() {
 IFS=","
 while read expected expression || [ -n "${LINE}" ]; do
   assert ${expected} ${expression}
-done < "in.csv" 
+done < "in"
 
 echo "OK"

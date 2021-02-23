@@ -1,7 +1,7 @@
-FROM alpine
+FROM ubuntu
 
-RUN apk update && apk add gcc make binutils libc-dev
+RUN apt-get update && apt-get install -y gcc make binutils libc-dev
 
 WORKDIR ~/
 
-CMD ["/bin/ash"]
+CMD ["/bin/bash"]
