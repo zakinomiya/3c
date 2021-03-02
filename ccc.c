@@ -18,6 +18,7 @@ struct Token {
   Token *next;
   int val;
   char *str;
+  int len;
 };
 
 typedef enum {
@@ -26,6 +27,12 @@ typedef enum {
   ND_MUL,
   ND_DIV,
   ND_NUM,
+  ND_LT,
+  ND_GT,
+  ND_LTE,
+  ND_GTE,
+  ND_EQ,
+  ND_NEQ,
 } NodeKind;
 
 typedef struct Node Node;
@@ -66,8 +73,9 @@ void error(char *fmt, ...) {
 }
 
 // if token is the same as op, return true; otherwise return false.
-bool consume(char op) {
-  if (token->kind != TK_RESERVED || token->str[0] != op) {
+bool consume(char *op) {
+  if (token->kind != TK_RESERVED || strlen(op) != token->len ||
+      memcmp(token->str, op, token->len) != 0) {
     return false;
   }
 
@@ -77,7 +85,8 @@ bool consume(char op) {
 
 // if token is the same as op, read the next token; otherwise return error
 void expect(char op) {
-  if (token->kind != TK_RESERVED || token->str[0] != op) {
+  if (token->kind != TK_RESERVED || strlen(&op) != token->len ||
+      memcmp(token->str, &op, token->len) != 0) {
     error_at(token->str, "'%c' not given", op);
   }
   token = token->next;
@@ -94,15 +103,18 @@ int expect_number() {
 
 bool at_eof() { return token->kind == TK_EOF; }
 
-Token *new_token(TokenKind kind, Token *cur, char *str) {
+Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   // allocate memory address to the new token
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
   tok->str = str;
+  tok->len = len;
   // new token as the next token of teh current one
   cur->next = tok;
   return tok;
 }
+
+bool startswith(char *p, char *q) { return memcmp(p, q, strlen(q)) == 0; }
 
 // Split a string into tokens
 Token *tokenize(char *p) {
@@ -119,25 +131,32 @@ Token *tokenize(char *p) {
       continue;
     }
 
+    if (startswith(p, "!=") || startswith(p, "==") || startswith(p, "<=") ||
+        startswith(p, ">=")) {
+      cur = new_token(TK_RESERVED, cur, p, 2);
+      p += 2;
+      continue;
+    }
+
     // if next letter is '+' or '-' create token and set the new one as current
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' ||
-        *p == ')') {
-      cur = new_token(TK_RESERVED, cur, p++);
+        *p == ')' || *p == '<' || *p == '>') {
+      cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
 
     // if next letter is numeric, create a new token and set the value
     if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p);
+      cur = new_token(TK_NUM, cur, p, 1);
       cur->val = strtol(p, &p, 10);
       continue;
     }
 
-    error("Failed to tokenize");
+    error("Failed to tokenize", *p);
   }
 
   // create EOF token
-  new_token(TK_EOF, cur, p);
+  new_token(TK_EOF, cur, p, 1);
   return head.next;
 }
 
@@ -178,30 +197,6 @@ Node *new_node_num(int val) {
   return node;
 }
 
-Node *primary() {
-  if (consume('(')) {
-    Node *node = expr();
-    expect(')');
-    return node;
-  }
-
-  return new_node_num(expect_number());
-}
-
-Node *mul() {
-  Node *node = unary();
-
-  for (;;) {
-    if (consume('*')) {
-      node = new_node(ND_MUL, node, unary());
-    } else if (consume('/')) {
-      node = new_node(ND_DIV, node, unary());
-    } else {
-      return node;
-    }
-  }
-}
-
 void gen(Node *node) {
   if (node->kind == ND_NUM) {
     printf("  push %d\n", node->val);
@@ -228,30 +223,109 @@ void gen(Node *node) {
       printf("  cqo\n");
       printf("  idiv rdi\n");
       break;
+    case ND_EQ:
+      printf("  cmp rax, rdi\n");
+      printf("  sete al\n");
+      printf("  movzb rax, al\n");
+    case ND_NEQ:
+      printf("  cmp rax, rdi\n");
+      printf("  setne al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case ND_LT:
+      printf("  cmp rax, rdi\n");
+      printf("  setl al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case ND_GT:
+      printf("  cmp rax, rdi\n");
+      printf("  setg al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case ND_LTE:
+      printf("  cmp rax, rdi\n");
+      printf("  setle al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case ND_GTE:
+      printf("  cmp rax, rdi\n");
+      printf("  setge al\n");
+      printf("  movzb rax, al\n");
+      break;
   }
 
   printf("  push rax\n");
 }
 
-Node *expr() {
-  Node *node = mul();
-  for (;;) {
-    if (consume('+')) {
-      node = new_node(ND_ADD, node, mul());
-    } else if (consume('-')) {
-      node = new_node(ND_SUB, node, mul());
-    } else {
-      return node;
-    }
+Node *primary() {
+  if (consume("(")) {
+    Node *node = expr();
+    expect(')');
+    return node;
   }
+
+  return new_node_num(expect_number());
 }
 
 Node *unary() {
-  if (consume('+')) {
+  if (consume("+")) {
     return primary();
-  } else if (consume('-')) {
+  } else if (consume("-")) {
     return new_node(ND_SUB, new_node_num(0), primary());
   }
   return primary();
 }
 
+Node *mul() {
+  Node *node = unary();
+
+  if (consume("*")) {
+    node = new_node(ND_MUL, node, unary());
+  } else if (consume("/")) {
+    node = new_node(ND_DIV, node, unary());
+  }
+  return node;
+}
+
+Node *add() {
+  Node *node = mul();
+
+  if (consume("+")) {
+    node = new_node(ND_ADD, node, mul());
+  } else if (consume("-")) {
+    node = new_node(ND_SUB, node, mul());
+  }
+  return node;
+}
+
+Node *relational() {
+  Node *node = add();
+
+  if (consume("<=")) {
+    return new_node(ND_LTE, node, add());
+  } else if (consume(">=")) {
+    return new_node(ND_GTE, node, add());
+  } else if (consume("<")) {
+    return new_node(ND_LT, node, add());
+  } else if (consume(">")) {
+    return new_node(ND_GT, node, add());
+  }
+  return node;
+}
+
+Node *equality() {
+  Node *node = relational();
+
+  if (consume("==")) {
+    return new_node(ND_EQ, node, relational());
+  } else if (consume("!=")) {
+    return new_node(ND_NEQ, node, relational());
+  } else {
+    return node;
+  }
+}
+
+Node *expr() {
+  Node *node = equality();
+  return node;
+}
