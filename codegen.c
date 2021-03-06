@@ -5,83 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef enum {
-  TK_RESERVED,
-  TK_NUM,
-  TK_EOF,
-} TokenKind;
-
-typedef struct Token Token;
-
-struct Token {
-  TokenKind kind;
-  Token *next;
-  int val;
-  char *str;
-  int len;
-};
-
-typedef enum {
-  ND_ADD,
-  ND_SUB,
-  ND_MUL,
-  ND_DIV,
-  ND_NUM,
-  ND_LT,
-  ND_GT,
-  ND_LTE,
-  ND_GTE,
-  ND_EQ,
-  ND_NEQ,
-} NodeKind;
-
-typedef struct Node Node;
-
-struct Node {
-  NodeKind kind;
-  Node *lhs;
-  Node *rhs;
-  int val;
-};
-
-Node *expr(void);
-Node *unary(void);
-void gen(Node *node);
+#include "ccc.h"
 
 Token *token;
-char *user_input;
-
-void error_at(char *loc, char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-
-  int pos = loc - user_input;
-  fprintf(stderr, "%s\n", user_input);
-  fprintf(stderr, "%*s", pos, " ");
-  fprintf(stderr, "^ ");
-  vfprintf(stderr, fmt, ap);
-  fprintf(stderr, "\n");
-  exit(1);
-}
-
-void error(char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  vfprintf(stderr, fmt, ap);
-  fprintf(stderr, "\n");
-  exit(1);
-}
-
-// if token is the same as op, return true; otherwise return false.
-bool consume(char *op) {
-  if (token->kind != TK_RESERVED || strlen(op) != token->len ||
-      memcmp(token->str, op, token->len) != 0) {
-    return false;
-  }
-
-  token = token->next;
-  return true;
-}
 
 // if token is the same as op, read the next token; otherwise return error
 void expect(char op) {
@@ -101,86 +27,18 @@ int expect_number() {
   return val;
 }
 
+// if token is the same as op, return true; otherwise return false.
+bool consume(char *op) {
+  if (token->kind != TK_RESERVED || strlen(op) != token->len ||
+      memcmp(token->str, op, token->len) != 0) {
+    return false;
+  }
+
+  token = token->next;
+  return true;
+}
+
 bool at_eof() { return token->kind == TK_EOF; }
-
-Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
-  // allocate memory address to the new token
-  Token *tok = calloc(1, sizeof(Token));
-  tok->kind = kind;
-  tok->str = str;
-  tok->len = len;
-  // new token as the next token of teh current one
-  cur->next = tok;
-  return tok;
-}
-
-bool startswith(char *p, char *q) { return memcmp(p, q, strlen(q)) == 0; }
-
-// Split a string into tokens
-Token *tokenize(char *p) {
-  // init head token
-  Token head;
-  head.next = NULL;
-  // set head as the current token
-  Token *cur = &head;
-
-  while (*p) {
-    // skip space
-    if (isspace(*p)) {
-      p++;
-      continue;
-    }
-
-    if (startswith(p, "!=") || startswith(p, "==") || startswith(p, "<=") ||
-        startswith(p, ">=")) {
-      cur = new_token(TK_RESERVED, cur, p, 2);
-      p += 2;
-      continue;
-    }
-
-    // if next letter is '+' or '-' create token and set the new one as current
-    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' ||
-        *p == ')' || *p == '<' || *p == '>') {
-      cur = new_token(TK_RESERVED, cur, p++, 1);
-      continue;
-    }
-
-    // if next letter is numeric, create a new token and set the value
-    if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p, 1);
-      cur->val = strtol(p, &p, 10);
-      continue;
-    }
-
-    error("Failed to tokenize", *p);
-  }
-
-  // create EOF token
-  new_token(TK_EOF, cur, p, 1);
-  return head.next;
-}
-
-int main(int argc, char **argv) {
-  if (argc != 2) {
-    error("Invalid argument number");
-    return 1;
-  }
-
-  user_input = argv[1];
-  token = tokenize(user_input);
-  Node *node = expr();
-
-  printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("main:\n");
-
-  gen(node);
-
-  printf("  pop rax\n");
-  printf("  ret\n");
-  return 0;
-}
-// -------------------------------------
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
@@ -251,6 +109,8 @@ void gen(Node *node) {
       printf("  cmp rax, rdi\n");
       printf("  setge al\n");
       printf("  movzb rax, al\n");
+      break;
+    case ND_NUM:
       break;
   }
 
