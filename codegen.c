@@ -1,13 +1,4 @@
-#include <ctype.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "ccc.h"
-
-Token *token;
 
 // if token is the same as op, read the next token; otherwise return error
 void expect(char op) {

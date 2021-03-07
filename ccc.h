@@ -1,6 +1,14 @@
+#include <ctype.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 // Type definitions
 typedef struct Node Node;
 typedef struct Token Token;
+
 typedef enum {
   ND_ADD,
   ND_SUB,
@@ -37,10 +45,13 @@ struct Node {
   int val;
 };
 
-// Functions Declarations
+// Function Declarations
 void gen(Node *node);
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
 bool consume(char *p);
 Token *tokenize(char *p);
 Node *expr();
+
+extern char *user_input;
+extern Token *token;
