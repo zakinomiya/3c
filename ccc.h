@@ -8,7 +8,7 @@
 // Type definitions
 typedef struct Node Node;
 typedef struct Token Token;
-
+typedef struct LVar LVar;
 typedef enum {
   ND_ADD,
   ND_SUB,
@@ -21,11 +21,14 @@ typedef enum {
   ND_GTE,
   ND_EQ,
   ND_NEQ,
+  ND_ASSIGN,  // assignment(=)
+  ND_LVAR,    // local variable
 } NodeKind;
 
 typedef enum {
   TK_RESERVED,
   TK_NUM,
+  TK_IDENT,
   TK_EOF,
 } TokenKind;
 
@@ -43,10 +46,19 @@ struct Node {
   Node *lhs;
   Node *rhs;
   int val;
+  int offset;
+};
+
+struct LVar {
+  int offset;
+  int len;
+  char *name;
+  LVar *next;
 };
 
 // Function Declarations
 void gen(Node *node);
+void program();
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
 bool consume(char *p);
@@ -55,3 +67,5 @@ Node *expr();
 
 extern char *user_input;
 extern Token *token;
+extern Node *code[100];
+extern LVar *locals;

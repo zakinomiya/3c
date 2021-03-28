@@ -44,8 +44,20 @@ Token *tokenize(char *p) {
 
   while (*p) {
     // skip space
-    if (isspace(*p)) {
+    if (isspace(*p) || *p == '\n') {
       p++;
+      continue;
+    }
+
+    if ('a' <= *p && *p <= 'z') {
+      int i = 0;
+      char c = *(p + i);
+      while ('a' <= c && c <= 'z') {
+        i++;
+        c = *(p + i);
+      }
+      cur = new_token(TK_IDENT, cur, p, i);
+      p += i;
       continue;
     }
 
@@ -58,7 +70,7 @@ Token *tokenize(char *p) {
 
     // if next letter is '+' or '-' create token and set the new one as current
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' ||
-        *p == ')' || *p == '<' || *p == '>') {
+        *p == ')' || *p == '<' || *p == '>' || *p == '=' || *p == ';') {
       cur = new_token(TK_RESERVED, cur, p++, 1);
       continue;
     }
@@ -72,7 +84,6 @@ Token *tokenize(char *p) {
 
     error("Failed to tokenize", *p);
   }
-
   // create EOF token
   new_token(TK_EOF, cur, p, 1);
   return head.next;
