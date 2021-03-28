@@ -23,11 +23,6 @@ if [ "$actual" = "$expected" ]; then
   fi
 }
 
-#IFS=","
-#while read expected expression || [ -n "${LINE}" ]; do
-#  assert ${expected} ${expression}
-#done < "in"
-
 assert 5 "1+4;"
 assert 10 "6+4;"
 assert 7 "
