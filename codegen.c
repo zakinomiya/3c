@@ -20,13 +20,17 @@ int expect_number() {
   }
 
   int val = token->val;
-
   token = token->next;
   return val;
 }
 
 // if token is the same as op, return true; otherwise return false.
 bool consume(char *op) {
+  if (token->kind == TK_RETURN) {
+    token = token->next;
+    return true;
+  }
+
   if (token->kind != TK_RESERVED || strlen(op) != token->len ||
       memcmp(token->str, op, token->len) != 0) {
     return false;
@@ -44,6 +48,13 @@ Token *consume_ident() {
   }
 
   return NULL;
+}
+
+bool consume_return() {
+  if (token->kind == TK_RETURN) {
+    return true;
+  }
+  return false;
 }
 
 bool at_eof() { return token->kind == TK_EOF; }
@@ -80,6 +91,13 @@ void gen_lval(Node *node) {
 
 void gen(Node *node) {
   switch (node->kind) {
+    case ND_RETURN:
+      gen(node->lhs);
+      printf(" pop rax\n");
+      printf(" mov rsp, rbp\n");
+      printf(" pop rbp\n");
+      printf(" ret\n");
+      return;
     case ND_NUM:
       printf("  push %d\n", node->val);
       return;
@@ -121,6 +139,7 @@ void gen(Node *node) {
   printf("  pop rdi\n");
   printf("  pop rax\n");
 
+  // operation
   switch (node->kind) {
     case ND_ADD:
       printf("  add rax, rdi\n");
@@ -163,8 +182,6 @@ void gen(Node *node) {
       printf("  cmp rax, rdi\n");
       printf("  setge al\n");
       printf("  movzb rax, al\n");
-      break;
-    case ND_NUM:
       break;
   }
 
@@ -289,7 +306,16 @@ Node *assign() {
 Node *expr() { return assign(); }
 
 Node *stmt() {
-  Node *node = expr();
+  Node *node;
+
+  if (consume("return")) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_RETURN;
+    node->lhs = expr();
+  } else {
+    node = expr();
+  }
+
   expect(';');
   return node;
 }

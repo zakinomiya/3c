@@ -1,26 +1,5 @@
 #include "ccc.h"
 
-void error_at(char *loc, char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-
-  int pos = loc - user_input;
-  fprintf(stderr, "%s\n", user_input);
-  fprintf(stderr, "%*s", pos, " ");
-  fprintf(stderr, "^ ");
-  vfprintf(stderr, fmt, ap);
-  fprintf(stderr, "\n");
-  exit(1);
-}
-
-void error(char *fmt, ...) {
-  va_list ap;
-  va_start(ap, fmt);
-  vfprintf(stderr, fmt, ap);
-  fprintf(stderr, "\n");
-  exit(1);
-}
-
 Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   // allocate memory address to the new token
   Token *tok = calloc(1, sizeof(Token));
@@ -33,6 +12,11 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
 }
 
 bool startswith(char *p, char *q) { return memcmp(p, q, strlen(q)) == 0; }
+
+int is_alnum(char c) {
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') ||
+         ('0' <= c && c <= '9') || (c == '_');
+}
 
 // Split a string into tokens
 Token *tokenize(char *p) {
@@ -49,12 +33,16 @@ Token *tokenize(char *p) {
       continue;
     }
 
+    if (startswith(p, "return") && !is_alnum(p[6])) {
+      cur = new_token(TK_RETURN, cur, p, 6);
+      p += 6;
+      continue;
+    }
+
     if ('a' <= *p && *p <= 'z') {
       int i = 0;
-      char c = *(p + i);
-      while ('a' <= c && c <= 'z') {
+      while ('a' <= *(p + i) && *(p + i) <= 'z') {
         i++;
-        c = *(p + i);
       }
       cur = new_token(TK_IDENT, cur, p, i);
       p += i;

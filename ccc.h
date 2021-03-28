@@ -23,6 +23,7 @@ typedef enum {
   ND_NEQ,
   ND_ASSIGN,  // assignment(=)
   ND_LVAR,    // local variable
+  ND_RETURN,
 } NodeKind;
 
 typedef enum {
@@ -30,6 +31,7 @@ typedef enum {
   TK_NUM,
   TK_IDENT,
   TK_EOF,
+  TK_RETURN,
 } TokenKind;
 
 // Struct definitions

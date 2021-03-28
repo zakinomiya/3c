@@ -13,8 +13,7 @@ assert() {
   cc -o tmp ${test_file_name}
   ./tmp 
   actual="$?"
-
-  if [ "$actual" = "$expected" ]; then
+if [ "$actual" = "$expected" ]; then
     echo "$input => $actual"
     echo "OK"
   else 
@@ -41,4 +40,10 @@ assert 15 "
  foo = 10;
  bar = 5;
  foo + bar;
+"
+
+assert 10 "
+ foo = 10;
+ bar = 0;
+ return foo + bar;
 "
