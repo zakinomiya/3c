@@ -16,6 +16,7 @@ assert() {
 if [ "$actual" = "$expected" ]; then
     echo "$input => $actual"
     echo "OK"
+    rm ./${test_file_name}
   else 
     echo "$input => $expected expected, but got $actual"
     echo "Test Failed"

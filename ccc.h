@@ -9,6 +9,7 @@
 typedef struct Node Node;
 typedef struct Token Token;
 typedef struct LVar LVar;
+typedef struct Program Program;
 typedef enum {
   ND_ADD,
   ND_SUB,
@@ -24,6 +25,7 @@ typedef enum {
   ND_ASSIGN,  // assignment(=)
   ND_LVAR,    // local variable
   ND_RETURN,
+  ND_IF,
 } NodeKind;
 
 typedef enum {
@@ -32,6 +34,7 @@ typedef enum {
   TK_IDENT,
   TK_EOF,
   TK_RETURN,
+  TK_IF,
 } TokenKind;
 
 // Struct definitions
@@ -58,16 +61,24 @@ struct LVar {
   LVar *next;
 };
 
+struct Program {
+  char *input;
+  int linenum;
+  Token *tok;
+  Node *code[100];
+  LVar *locals;
+};
+
 // Function Declarations
 void gen(Node *node);
 void program();
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
+void print_prologue(int offset);
+void print_epilogue();
+void parse(Program *prog);
 bool consume(char *p);
 Token *tokenize(char *p);
 Node *expr();
 
-extern char *user_input;
-extern Token *token;
-extern Node *code[100];
-extern LVar *locals;
+extern Program *prog;

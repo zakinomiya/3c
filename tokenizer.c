@@ -39,9 +39,15 @@ Token *tokenize(char *p) {
       continue;
     }
 
+    if (startswith(p, "if") && !is_alnum(p[6])) {
+      cur = new_token(TK_IF, cur, p, 2);
+      p += 2;
+      continue;
+    }
+
     if ('a' <= *p && *p <= 'z') {
       int i = 0;
-      while ('a' <= *(p + i) && *(p + i) <= 'z') {
+      while (is_alnum(*(p + i))) {
         i++;
       }
       cur = new_token(TK_IDENT, cur, p, i);
@@ -72,6 +78,7 @@ Token *tokenize(char *p) {
 
     error("Failed to tokenize", *p);
   }
+
   // create EOF token
   new_token(TK_EOF, cur, p, 1);
   return head.next;

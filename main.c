@@ -1,10 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "ccc.h"
 
-char *user_input;
-Token *token;
-Node *code[100];
+Program *prog;
 
 int main(int argc, char **argv) {
   if (argc != 2) {
@@ -12,25 +11,18 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  user_input = argv[1];
-  token = tokenize(user_input);
-  program();
+  prog = calloc(1, sizeof(Program));
+  prog->input = argv[1];
+  prog->tok = tokenize(prog->input);
+  parse(prog);
 
-  printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("main:\n");
-
-  printf("  push rbp\n");
-  printf("  mov rbp, rsp\n");
-  printf("  sub rsp, 16\n");
-
-  for (int i = 0; code[i]; i++) {
-    gen(code[i]);
+  print_prologue(16);
+  for (int i = 0; prog->code[i]; i++) {
+    gen(prog->code[i]);
     printf("  pop rax\n");
   }
 
-  printf("  mov rsp, rbp\n");
-  printf("  pop rbp\n");
-  printf("  ret\n");
+  print_epilogue();
   return 0;
 }
+

@@ -1,8 +1,9 @@
-CFLAGS=-std=c11 -g -static
+CFLAGS=-std=c11 -ggdb -static
 SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)
+D_RUN=docker run --ulimit="core=65536" --rm -v ${PWD}:/ccc -w /ccc 
 
-RUN=docker run --rm -v ${PWD}:/ccc -w /ccc ccc 
+RUN=${D_RUN} ccc 
 
 $(OBJS): ccc.h
 
@@ -12,10 +13,13 @@ ccc: $(OBJS)
 docker_build:
 		docker build -t "ccc" .
 
+debug:
+		${RUN} gdb ccc core
+
 test: ccc
 		${RUN} ./test.sh
 
 clean:
-	rm tmp* ccc *.o || true
+	rm tmp* ccc *.o core || true
 
 .PHONY: test clean

@@ -5,6 +5,24 @@
 Node *code[100];
 LVar *locals;
 
+void print_main() {
+  printf(".intel_syntax noprefix\n");
+  printf(".global main\n");
+  printf("main:\n");
+}
+
+void print_prologue(int offset) {
+  printf("  push rbp\n");
+  printf("  mov rbp, rsp\n");
+  printf("  sub rsp, %d\n", offset);
+}
+
+void print_epilogue() {
+  printf("  mov rsp, rbp\n");
+  printf("  pop rbp\n");
+  printf("  ret\n");
+}
+
 // gen_lval pushes the address of left side value to the stack
 void gen_lval(Node *node) {
   if (node->kind != ND_LVAR) {
