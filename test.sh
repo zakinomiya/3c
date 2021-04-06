@@ -9,6 +9,7 @@ assert() {
   CASENUM=$((CASENUM+1))
 
   ./ccc "${input}" > ${test_file_name}
+  #./ccc "${input}" 
 
   cc -o tmp ${test_file_name}
   ./tmp 
@@ -24,7 +25,8 @@ if [ "$actual" = "$expected" ]; then
   fi
 }
 
-assert 5 "1+4;"
+assert 5 "1+4 ; "
+assert 6 "a=1 ; a = a +4; 1 + 5;"
 assert 10 "6+4;"
 assert 7 "
  a = 3;

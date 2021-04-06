@@ -1,12 +1,16 @@
+#include <stdlib.h>
+#include <string.h>
+
 #include "ccc.h"
 
 Token *new_token(TokenKind kind, Token *cur, char *str, int len) {
   // allocate memory address to the new token
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
-  tok->str = str;
   tok->len = len;
-  // new token as the next token of teh current one
+  tok->str = calloc(1, sizeof(str));
+  strncpy(tok->str, str, len);
+  // new token as the next token of the current one
   cur->next = tok;
   return tok;
 }
@@ -19,12 +23,9 @@ int is_alnum(char c) {
 }
 
 // Split a string into tokens
-Token *tokenize(char *p) {
-  // init head token
-  Token head;
-  head.next = NULL;
+void tokenize(Token *head, char *p) {
   // set head as the current token
-  Token *cur = &head;
+  Token *cur = head;
 
   while (*p) {
     // skip space
@@ -39,7 +40,7 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    if (startswith(p, "if") && !is_alnum(p[6])) {
+    if (startswith(p, "if") && !is_alnum(p[2])) {
       cur = new_token(TK_IF, cur, p, 2);
       p += 2;
       continue;
@@ -51,7 +52,7 @@ Token *tokenize(char *p) {
         i++;
       }
       cur = new_token(TK_IDENT, cur, p, i);
-      p += i;
+      p++;
       continue;
     }
 
@@ -65,7 +66,8 @@ Token *tokenize(char *p) {
     // if next letter is '+' or '-' create token and set the new one as current
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' ||
         *p == ')' || *p == '<' || *p == '>' || *p == '=' || *p == ';') {
-      cur = new_token(TK_RESERVED, cur, p++, 1);
+      cur = new_token(TK_RESERVED, cur, p, 1);
+      p++;
       continue;
     }
 
@@ -81,6 +83,5 @@ Token *tokenize(char *p) {
 
   // create EOF token
   new_token(TK_EOF, cur, p, 1);
-  return head.next;
 }
 

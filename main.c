@@ -12,10 +12,14 @@ int main(int argc, char **argv) {
   }
 
   prog = calloc(1, sizeof(Program));
-  prog->input = argv[1];
-  prog->tok = tokenize(prog->input);
-  parse(prog);
+  Token head;
+  char *user_input = argv[1];
+  tokenize(&head, user_input);
+  prog->tok = head.next;
+  Token *tt = prog->tok;
 
+  parse(prog);
+  print_main();
   print_prologue(16);
   for (int i = 0; prog->code[i]; i++) {
     gen(prog->code[i]);

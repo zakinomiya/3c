@@ -74,11 +74,12 @@ void gen(Node *node);
 void program();
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
+void print_main();
 void print_prologue(int offset);
 void print_epilogue();
 void parse(Program *prog);
 bool consume(char *p);
-Token *tokenize(char *p);
+void tokenize(Token *head, char *p);
 Node *expr();
 
 extern Program *prog;
