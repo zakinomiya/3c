@@ -38,7 +38,13 @@ void gen_lval(Node *node) {
   printf("  push rax\n");
 }
 
+void print_node(Node *node) {
+  printf(" ; node kind is %d\n", node->kind);
+  printf(" ; node str is %s\n", node->str);
+}
+
 void gen(Node *node) {
+  // print_node(node);
   switch (node->kind) {
     case ND_RETURN:
       gen(node->lhs);

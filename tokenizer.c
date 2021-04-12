@@ -52,7 +52,7 @@ void tokenize(Token *head, char *p) {
         i++;
       }
       cur = new_token(TK_IDENT, cur, p, i);
-      p++;
+      p += i;
       continue;
     }
 

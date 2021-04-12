@@ -26,7 +26,7 @@ if [ "$actual" = "$expected" ]; then
 }
 
 assert 5 "1+4 ; "
-assert 6 "a=1 ; a = a +4; 1 + 5;"
+assert 6 "foo=1 ; foo = foo +4; 1 + foo;"
 assert 10 "6+4;"
 assert 7 "
  a = 3;
