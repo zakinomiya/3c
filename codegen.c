@@ -59,10 +59,9 @@ void print_comment(char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
 
-  char cfmt[256];
-  strcat(cfmt, "# ");
+  char cfmt[256] = "# ";
   strcat(cfmt, fmt);
-  printf("# %s\n", fmt);
+  printf(cfmt, ap);
   va_end(ap);
 }
 
@@ -86,13 +85,14 @@ void gen(Node *node) {
       // push the num value to the stack. or push another variable to the stack
       gen(node->rhs);
 
-      // load the value
       print_comment("load the value\n");
       printf("  pop rdi\n");
-      // load the lval address
+
+      print_comment("load the lval address\n");
       printf("  pop rax\n");
-      // copy the value in the rdi to the address to which the  value in the rax
-      // points
+      print_comment(
+          "copy the value in the rdi to the address to which the value in the "
+          "rax points\n");
       printf("  mov [rax], rdi\n");
       // push the value to the stack
       printf("  push rdi\n");

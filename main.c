@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
 
   parse(prog);
   print_main();
-  print_prologue(8);
+  print_prologue(16);
   for (int i = 0; prog->code[i]; i++) {
     gen(prog->code[i]);
     printf("  pop rax\n");
