@@ -6,6 +6,12 @@
 Node *code[100];
 LVar *locals;
 
+static int count() {
+  static int cnt = 0;
+  cnt++;
+  return cnt;
+}
+
 void print_main() {
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
@@ -67,7 +73,7 @@ void print_comment(char *fmt, ...) {
 
 void gen(Node *node) {
   // check_ast(node);
-  print_node(node);
+  // print_node(node);
   switch (node->kind) {
     case ND_RETURN:
       gen(node->lhs);
@@ -75,6 +81,20 @@ void gen(Node *node) {
       printf(" mov rsp, rbp\n");
       printf(" pop rbp\n");
       printf(" ret\n");
+      return;
+    case ND_IF:
+      gen(node->cond);
+
+      printf("  pop rax\n");
+      printf("  cmp rax, 0\n");
+      int c = count();
+      printf("  je .Lend.%d\n", c);
+      printf(".Lend.%d\n", c);
+
+      if (node->els) {
+        printf("  je .Lelse.%d\n", c);
+        printf(".Lelse.%d\n", c);
+      }
       return;
     case ND_NUM:
       printf("  push %d\n", node->val);

@@ -25,25 +25,24 @@ if [ "$actual" = "$expected" ]; then
   fi
 }
 
-#assert 5 "1+4 ; "
-#assert 5 "1+1+1+1+1 ; "
-#assert 5 "foo=1; foo+4 ; "
-#assert 6 "foo=1 ; foo = foo +4; 1 + foo;"
-#assert 10 "6+4;"
+assert 5 "1+4 ; "
+assert 5 "1+1+1+1+1 ; "
+assert 5 "foo=1; foo+4 ; "
+assert 6 "foo=1 ; foo = foo +4; 1 + foo;"
+assert 10 "6+4;"
 assert 7 "
  a = 3;
  b = 4;
  a + b;
 "
-
 assert 15 "
  foo = 10;
  bar = 5;
  foo + bar;
 "
-
 assert 10 "
  foo = 10;
  bar = 0;
  return foo + bar;
 "
+assert 42 "if 0 == 0 42;"

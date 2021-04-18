@@ -53,6 +53,9 @@ struct Node {
   int val;
   int offset;
   char *str;
+  Node *cond;
+  Node *then;
+  Node *els;
 };
 
 struct LVar {

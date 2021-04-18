@@ -5,6 +5,7 @@
 #include "ccc.h"
 
 static LVar *locals;
+// static Node *stmt(Token **token);
 static Node *expr(Token **token);
 
 static void advance(Token **token) {
@@ -39,6 +40,14 @@ static int expect_number(Token **token) {
   int val = tok->val;
   advance(token);
   return val;
+}
+
+static Node *expect_block(Token **token) {
+  expect(token, '{');
+  // Node *node = stmt(token);
+  Node *node = calloc(1, sizeof(Node));
+  expect(token, '{');
+  return node;
 }
 
 static bool equal(Token *tok, char *c) {
@@ -211,31 +220,33 @@ static Node *stmt(Token **token) {
     advance(token);
     node = calloc(1, sizeof(Node));
     node->kind = ND_RETURN;
-    node->lhs = expr(token);
+    node->rhs = expr(token);
     expect(token, ';');
     return node;
   }
 
-  // if (equal(tok, "if")) {
-  //  node = calloc(1, sizeof(Node));
-  //}
+  if (equal(*token, "if")) {
+    advance(token);
+    expect(token, '(');
+
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_IF;
+    node->cond = expr(token);
+
+    expect(token, ')');
+    expect_block(token);
+
+    if (equal(*token, "else")) {
+      expect_block(token);
+    }
+
+    return node;
+  }
+
   node = expr(token);
   expect(token, ';');
 
   return node;
-}
-
-void check_node(Node *node) {
-  if (!node) {
-    printf("no node provided");
-    return;
-  }
-
-  printf("%d\n", node->kind);
-  printf("%s\n", node->str);
-
-  if (node->lhs) check_node(node->lhs);
-  if (node->rhs) check_node(node->rhs);
 }
 
 static void program(Program *prog) {
@@ -245,7 +256,6 @@ static void program(Program *prog) {
   while (!at_eof(cur)) {
     Node *node = stmt(&cur);
     prog->code[i] = node;
-    // check_node(node);
     i++;
   }
 
