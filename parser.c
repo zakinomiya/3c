@@ -8,9 +8,9 @@ static LVar *locals;
 static Node *expr(Token **token);
 
 static void advance(Token **token) {
-  //  fprintf(stderr, "%d", (*token)->kind);
-  //  fprintf(stderr, "%s", (*token)->str);
-  //  fprintf(stderr, "%d\n", (*token)->len);
+  fprintf(stderr, "%d", (*token)->kind);
+  fprintf(stderr, "%s", (*token)->str);
+  fprintf(stderr, "%d\n", (*token)->len);
 
   *token = (*token)->next;
 }
@@ -24,8 +24,6 @@ static void expect(Token **token, char op) {
     fprintf(stderr, "given token kind is %d\n", tok->kind);
     fprintf(stderr, "given token len is %d\n", tok->len);
     fprintf(stderr, "given token str  is %s\n", tok->str);
-    fprintf(stderr, "next token kind is %d\n", tok->next->next->kind);
-    fprintf(stderr, "next token str  is %s\n", tok->next->next->str);
     error_at("", "error happened, expected %c but given %s", op, tok->str);
   }
 
@@ -35,10 +33,6 @@ static void expect(Token **token, char op) {
 static int expect_number(Token **token) {
   Token *tok = *token;
   if (tok->kind != TK_NUM) {
-    fprintf(stderr, "given token kind is %d\n", tok->kind);
-    fprintf(stderr, "given token str  is %s\n", tok->str);
-    fprintf(stderr, "next token kind is %d\n", tok->next->kind);
-    fprintf(stderr, "next token str  is %s\n", tok->next->str);
     error_at(tok->str, "%s is not a number", tok->str);
   }
 
@@ -96,6 +90,7 @@ static Node *primary(Token **token) {
   if ((*token)->kind == TK_IDENT) {
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR;
+    node->str = (*token)->str;
 
     LVar *lvar = find_lvar(*token);
     if (lvar) {
@@ -129,7 +124,7 @@ static Node *unary(Token **token) {
     return primary(token);
   } else if (equal(*token, "-")) {
     advance(token);
-    return new_node(ND_SUB, (*token)->str, new_node_num(0), primary(token));
+    return new_node(ND_SUB, "-", new_node_num(0), primary(token));
   }
   return primary(token);
 }
@@ -139,10 +134,10 @@ static Node *mul(Token **token) {
 
   if (equal(*token, "*")) {
     advance(token);
-    node = new_node(ND_MUL, (*token)->str, node, unary(token));
+    node = new_node(ND_MUL, "*", node, unary(token));
   } else if (equal(*token, "/")) {
     advance(token);
-    node = new_node(ND_DIV, (*token)->str, node, unary(token));
+    node = new_node(ND_DIV, "/", node, unary(token));
   }
   return node;
 }
@@ -152,11 +147,12 @@ static Node *add(Token **token) {
 
   if (equal(*token, "+")) {
     advance(token);
-    node = new_node(ND_ADD, (*token)->str, node, mul(token));
+    node = new_node(ND_ADD, "+", node, add(token));
   } else if (equal(*token, "-")) {
     advance(token);
-    node = new_node(ND_SUB, (*token)->str, node, mul(token));
+    node = new_node(ND_SUB, "-", node, add(token));
   }
+
   return node;
 }
 
@@ -164,19 +160,19 @@ static Node *relational(Token **token) {
   Node *node = add(token);
 
   if (equal(*token, "<=")) {
-    node = new_node(ND_SUB, (*token)->str, node, mul(token));
+    // node = new_node(ND_SUB, (*token)->str, node, mul(token));
     advance(token);
-    return new_node(ND_LTE, (*token)->str, node, add(token));
+    return new_node(ND_LTE, "<=", node, add(token));
   } else if (equal(*token, ">=")) {
-    node = new_node(ND_SUB, (*token)->str, node, mul(token));
+    // node = new_node(ND_SUB, (*token)->str, node, mul(token));
     advance(token);
-    return new_node(ND_GTE, (*token)->str, node, add(token));
+    return new_node(ND_GTE, ">=", node, add(token));
   } else if (equal(*token, "<")) {
     advance(token);
-    return new_node(ND_LT, (*token)->str, node, add(token));
+    return new_node(ND_LT, "<", node, add(token));
   } else if (equal(*token, ">")) {
     advance(token);
-    return new_node(ND_GT, (*token)->str, node, add(token));
+    return new_node(ND_GT, ">", node, add(token));
   }
   return node;
 }
@@ -186,10 +182,10 @@ static Node *equality(Token **token) {
 
   if (equal(*token, "==")) {
     advance(token);
-    return new_node(ND_EQ, (*token)->str, node, relational(token));
+    return new_node(ND_EQ, "==", node, relational(token));
   } else if (equal(*token, "!=")) {
     advance(token);
-    return new_node(ND_NEQ, (*token)->str, node, relational(token));
+    return new_node(ND_NEQ, "!=", node, relational(token));
   } else {
     return node;
   }
@@ -200,7 +196,7 @@ static Node *assign(Token **token) {
 
   if (equal(*token, "=")) {
     advance(token);
-    return new_node(ND_ASSIGN, (*token)->str, node, assign(token));
+    return new_node(ND_ASSIGN, "=", node, assign(token));
   }
 
   return node;
@@ -226,19 +222,34 @@ static Node *stmt(Token **token) {
   node = expr(token);
   expect(token, ';');
 
-  if (!at_eof(*token)) {
-    return stmt(token);
+  return node;
+}
+
+void check_node(Node *node) {
+  if (!node) {
+    printf("no node provided");
+    return;
   }
 
-  return node;
+  printf("%d\n", node->kind);
+  printf("%s\n", node->str);
+
+  if (node->lhs) check_node(node->lhs);
+  if (node->rhs) check_node(node->rhs);
 }
 
 static void program(Program *prog) {
   int i = 0;
   Token *cur = prog->tok;
 
-  prog->code[0] = stmt(&cur);
-  prog->code[1] = NULL;
+  while (!at_eof(cur)) {
+    Node *node = stmt(&cur);
+    prog->code[i] = node;
+    // check_node(node);
+    i++;
+  }
+
+  prog->code[i] = NULL;
 }
 
 void parse(Program *prog) {

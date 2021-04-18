@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "ccc.h"
 
@@ -39,12 +40,35 @@ void gen_lval(Node *node) {
 }
 
 void print_node(Node *node) {
-  printf(" ; node kind is %d\n", node->kind);
-  printf(" ; node str is %s\n", node->str);
+  printf("# node kind is %d\n", node->kind);
+  printf("# node str is %s\n", node->str);
+  printf("# node val is %d\n", node->val);
+}
+
+void check_ast(Node *node) {
+  printf("# node kind is %d\n", node->kind);
+  printf("# node str is %s\n", node->str);
+  printf("# node val is %d\n", node->val);
+
+  if (node->lhs) check_ast(node->lhs);
+  if (node->rhs) check_ast(node->rhs);
+  return;
+}
+
+void print_comment(char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+
+  char cfmt[256];
+  strcat(cfmt, "# ");
+  strcat(cfmt, fmt);
+  printf("# %s\n", fmt);
+  va_end(ap);
 }
 
 void gen(Node *node) {
-  // print_node(node);
+  // check_ast(node);
+  print_node(node);
   switch (node->kind) {
     case ND_RETURN:
       gen(node->lhs);
@@ -55,6 +79,23 @@ void gen(Node *node) {
       return;
     case ND_NUM:
       printf("  push %d\n", node->val);
+      return;
+    case ND_ASSIGN:
+      // push the lval address to the stack
+      gen_lval(node->lhs);
+      // push the num value to the stack. or push another variable to the stack
+      gen(node->rhs);
+
+      // load the value
+      print_comment("load the value\n");
+      printf("  pop rdi\n");
+      // load the lval address
+      printf("  pop rax\n");
+      // copy the value in the rdi to the address to which the  value in the rax
+      // points
+      printf("  mov [rax], rdi\n");
+      // push the value to the stack
+      printf("  push rdi\n");
       return;
     case ND_LVAR:
       // get the value of the local variable and push it to the stack
@@ -69,22 +110,6 @@ void gen(Node *node) {
       printf("  mov rax, [rax]\n");
       // push the value in the rax to the stack
       printf("  push rax\n");
-      return;
-    case ND_ASSIGN:
-      // push the lval address to the stack
-      gen_lval(node->lhs);
-      // push the num value to the stack. or push another variable to the stack
-      gen(node->rhs);
-
-      // load the value
-      printf("  pop rdi\n");
-      // load the lval address
-      printf("  pop rax\n");
-      // copy the value in the rdi to the address to which the  value in the rax
-      // points
-      printf("  mov [rax], rdi\n");
-      // push the value to the stack
-      printf("  push rdi\n");
       return;
   }
 

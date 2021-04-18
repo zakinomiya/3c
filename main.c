@@ -16,7 +16,6 @@ int main(int argc, char **argv) {
   char *user_input = argv[1];
   tokenize(&head, user_input);
   prog->tok = head.next;
-  Token *tt = prog->tok;
 
   parse(prog);
   print_main();

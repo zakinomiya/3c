@@ -17,7 +17,7 @@ assert() {
 if [ "$actual" = "$expected" ]; then
     echo "$input => $actual"
     echo "OK"
-    rm ./${test_file_name}
+    #rm ./${test_file_name}
   else 
     echo "$input => $expected expected, but got $actual"
     echo "Test Failed"
@@ -26,6 +26,8 @@ if [ "$actual" = "$expected" ]; then
 }
 
 assert 5 "1+4 ; "
+assert 5 "1+1+1+1+1 ; "
+assert 5 "foo=1; foo+4 ; "
 assert 6 "foo=1 ; foo = foo +4; 1 + foo;"
 assert 10 "6+4;"
 assert 7 "
