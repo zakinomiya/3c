@@ -45,4 +45,6 @@ assert 10 "
  bar = 0;
  return foo + bar;
 "
-assert 42 "if 0 == 0 42;"
+assert 42 "if 0 {return 42;}"
+assert 10 "if 1-1 {return 10;}"
+assert 15 "if 0==0 {return 15;}"

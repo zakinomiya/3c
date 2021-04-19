@@ -5,12 +5,13 @@
 #include "ccc.h"
 
 static LVar *locals;
-// static Node *stmt(Token **token);
+static Node *stmt(Token **token);
 static Node *expr(Token **token);
 
 static void advance(Token **token) {
-  fprintf(stderr, "%d", (*token)->kind);
-  fprintf(stderr, "%s", (*token)->str);
+  fprintf(stderr, "%d,", (*token)->kind);
+  fprintf(stderr, "%s,", (*token)->str);
+  fprintf(stderr, "%d,", (*token)->val);
   fprintf(stderr, "%d\n", (*token)->len);
 
   *token = (*token)->next;
@@ -44,9 +45,8 @@ static int expect_number(Token **token) {
 
 static Node *expect_block(Token **token) {
   expect(token, '{');
-  // Node *node = stmt(token);
-  Node *node = calloc(1, sizeof(Node));
-  expect(token, '{');
+  Node *node = stmt(token);
+  expect(token, '}');
   return node;
 }
 
@@ -220,24 +220,24 @@ static Node *stmt(Token **token) {
     advance(token);
     node = calloc(1, sizeof(Node));
     node->kind = ND_RETURN;
-    node->rhs = expr(token);
+    node->lhs = expr(token);
     expect(token, ';');
     return node;
   }
 
   if (equal(*token, "if")) {
     advance(token);
-    expect(token, '(');
+    // expect(token, '(');
 
     node = calloc(1, sizeof(Node));
     node->kind = ND_IF;
     node->cond = expr(token);
 
-    expect(token, ')');
-    expect_block(token);
+    // expect(token, ')');
+    node->then = expect_block(token);
 
     if (equal(*token, "else")) {
-      expect_block(token);
+      node->els = expect_block(token);
     }
 
     return node;

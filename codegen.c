@@ -73,7 +73,7 @@ void print_comment(char *fmt, ...) {
 
 void gen(Node *node) {
   // check_ast(node);
-  // print_node(node);
+  print_node(node);
   switch (node->kind) {
     case ND_RETURN:
       gen(node->lhs);
@@ -83,17 +83,17 @@ void gen(Node *node) {
       printf(" ret\n");
       return;
     case ND_IF:
-      gen(node->cond);
-
       printf("  pop rax\n");
       printf("  cmp rax, 0\n");
+
       int c = count();
       printf("  je .Lend.%d\n", c);
-      printf(".Lend.%d\n", c);
+      printf(".Lend.%d:\n", c);
 
+      gen(node->then);
       if (node->els) {
-        printf("  je .Lelse.%d\n", c);
-        printf(".Lelse.%d\n", c);
+        printf(".Lelse.%d:\n", c);
+        gen(node->els);
       }
       return;
     case ND_NUM:
