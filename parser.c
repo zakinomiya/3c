@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "ccc.h"
 
 static LVar *locals;
@@ -19,14 +15,14 @@ static void advance(Token **token) {
 
 // if token is the same as op, read the next token;
 // otherwise return error
-static void expect(Token **token, char op) {
+static void expect(Token **token, char *op) {
   Token *tok = *token;
-  if (tok->kind != TK_RESERVED || strlen(&op) == tok->len ||
-      memcmp(tok->str, &op, tok->len) != 0) {
+  if (tok->kind != TK_RESERVED || strlen(op) != tok->len ||
+      memcmp(tok->str, op, tok->len) != 0) {
     fprintf(stderr, "given token kind is %d\n", tok->kind);
     fprintf(stderr, "given token len is %d\n", tok->len);
-    fprintf(stderr, "given token str  is %s\n", tok->str);
-    error_at("", "error happened, expected %c but given %s", op, tok->str);
+    fprintf(stderr, "given token str is %s\n", tok->str);
+    error_at("", "error happened, expected %s but given %s", op, tok->str);
   }
 
   advance(token);
@@ -44,9 +40,9 @@ static int expect_number(Token **token) {
 }
 
 static Node *expect_block(Token **token) {
-  expect(token, '{');
+  expect(token, "{");
   Node *node = stmt(token);
-  expect(token, '}');
+  expect(token, "}");
   return node;
 }
 
@@ -92,7 +88,7 @@ static Node *primary(Token **token) {
     Node *node = expr(token);
     advance(token);
     advance(token);
-    expect(token, ')');
+    expect(token, ")");
     return node;
   }
 
@@ -221,22 +217,23 @@ static Node *stmt(Token **token) {
     node = calloc(1, sizeof(Node));
     node->kind = ND_RETURN;
     node->lhs = expr(token);
-    expect(token, ';');
+    expect(token, ";");
     return node;
   }
 
   if (equal(*token, "if")) {
     advance(token);
-    // expect(token, '(');
+    expect(token, "(");
 
     node = calloc(1, sizeof(Node));
     node->kind = ND_IF;
     node->cond = expr(token);
 
-    // expect(token, ')');
+    expect(token, ")");
     node->then = expect_block(token);
 
     if (equal(*token, "else")) {
+      advance(token);
       node->els = expect_block(token);
     }
 
@@ -244,7 +241,7 @@ static Node *stmt(Token **token) {
   }
 
   node = expr(token);
-  expect(token, ';');
+  expect(token, ";");
 
   return node;
 }

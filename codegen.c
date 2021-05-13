@@ -77,17 +77,21 @@ void gen(Node *node) {
   switch (node->kind) {
     case ND_RETURN:
       gen(node->lhs);
-      printf(" pop rax\n");
-      printf(" mov rsp, rbp\n");
-      printf(" pop rbp\n");
-      printf(" ret\n");
+      printf("  pop rax\n");
+      printf("  mov rsp, rbp\n");
+      printf("  pop rbp\n");
+      printf("  ret\n");
       return;
     case ND_IF:
+      gen(node->cond);
       printf("  pop rax\n");
-      printf("  cmp rax, 0\n");
+      printf("  cmp rax, 1\n");
 
       int c = count();
       printf("  je .Lend.%d\n", c);
+      if (node->els) {
+        printf("  jne .Lelse.%d\n", c);
+      }
       printf(".Lend.%d:\n", c);
 
       gen(node->then);
@@ -158,6 +162,7 @@ void gen(Node *node) {
       printf("  cmp rax, rdi\n");
       printf("  sete al\n");
       printf("  movzb rax, al\n");
+      break;
     case ND_NEQ:
       printf("  cmp rax, rdi\n");
       printf("  setne al\n");
