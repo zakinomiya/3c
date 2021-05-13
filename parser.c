@@ -234,7 +234,11 @@ static Node *stmt(Token **token) {
 
     if (equal(*token, "else")) {
       advance(token);
-      node->els = expect_block(token);
+      if (equal(*token, "if")) {
+        node->els = stmt(token);
+      } else {
+        node->els = expect_block(token);
+      }
     }
 
     return node;

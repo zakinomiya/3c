@@ -49,3 +49,37 @@ assert 42 "if (0) {return 42;}"
 assert 10 "if (1-1) {return 10;}"
 assert 15 "if (0==0) {return 15;}"
 assert 10 "if (1==0) {return 15;} else {return 10;}"
+assert 5 "
+a = 5;
+b = 0;
+if (a>=b) {
+  return a;
+} else {
+  return b;
+}"
+assert 0 "
+a = 5;
+b = 0;
+if (1==0) {
+  return a;
+} else {
+  return b;
+}"
+assert 6 "
+a = 5;
+b = 0;
+if (a>=b) {
+  return a + 1;
+} else {
+  return b;
+}"
+assert 0 "
+a = 5;
+b = 1;
+if (1==0) {
+  return a;
+} else if (0==0) {
+  return b-1;
+} else {
+  return 10;
+}"
