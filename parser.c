@@ -3,8 +3,9 @@
 static LVar *locals;
 static Node *stmt(Token **token);
 static Node *expr(Token **token);
+static Node *compound_stmt(Token **token);
 
-static void advance(Token **token) {
+static void next(Token **token) {
   fprintf(stderr, "%d,", (*token)->kind);
   fprintf(stderr, "%s,", (*token)->str);
   fprintf(stderr, "%d,", (*token)->val);
@@ -25,7 +26,7 @@ static void expect(Token **token, char *op) {
     error_at("", "error happened, expected %s but given %s", op, tok->str);
   }
 
-  advance(token);
+  next(token);
 }
 
 static int expect_number(Token **token) {
@@ -35,15 +36,8 @@ static int expect_number(Token **token) {
   }
 
   int val = tok->val;
-  advance(token);
+  next(token);
   return val;
-}
-
-static Node *expect_block(Token **token) {
-  expect(token, "{");
-  Node *node = stmt(token);
-  expect(token, "}");
-  return node;
 }
 
 static bool equal(Token *tok, char *c) {
@@ -62,6 +56,13 @@ static Node *new_node(NodeKind kind, char *str, Node *lhs, Node *rhs) {
   node->lhs = lhs;
   node->rhs = rhs;
   node->str = str;
+  return node;
+}
+
+static Node *new_node_block(Node *body) {
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = ND_BLOCK;
+  node->body = body;
   return node;
 }
 
@@ -84,10 +85,10 @@ static LVar *find_lvar(Token *tok) {
 
 static Node *primary(Token **token) {
   if (equal(*token, "(")) {
-    advance(token);
+    next(token);
     Node *node = expr(token);
-    advance(token);
-    advance(token);
+    next(token);
+    next(token);
     expect(token, ")");
     return node;
   }
@@ -99,7 +100,7 @@ static Node *primary(Token **token) {
 
     LVar *lvar = find_lvar(*token);
     if (lvar) {
-      advance(token);
+      next(token);
       node->offset = lvar->offset;
       return node;
     }
@@ -116,7 +117,7 @@ static Node *primary(Token **token) {
 
     node->offset = lvar->offset;
     locals = lvar;
-    advance(token);
+    next(token);
     return node;
   }
 
@@ -125,10 +126,10 @@ static Node *primary(Token **token) {
 
 static Node *unary(Token **token) {
   if (equal(*token, "+")) {
-    advance(token);
+    next(token);
     return primary(token);
   } else if (equal(*token, "-")) {
-    advance(token);
+    next(token);
     return new_node(ND_SUB, "-", new_node_num(0), primary(token));
   }
   return primary(token);
@@ -138,10 +139,10 @@ static Node *mul(Token **token) {
   Node *node = unary(token);
 
   if (equal(*token, "*")) {
-    advance(token);
+    next(token);
     node = new_node(ND_MUL, "*", node, unary(token));
   } else if (equal(*token, "/")) {
-    advance(token);
+    next(token);
     node = new_node(ND_DIV, "/", node, unary(token));
   }
   return node;
@@ -151,10 +152,10 @@ static Node *add(Token **token) {
   Node *node = mul(token);
 
   if (equal(*token, "+")) {
-    advance(token);
+    next(token);
     node = new_node(ND_ADD, "+", node, add(token));
   } else if (equal(*token, "-")) {
-    advance(token);
+    next(token);
     node = new_node(ND_SUB, "-", node, add(token));
   }
 
@@ -166,17 +167,17 @@ static Node *relational(Token **token) {
 
   if (equal(*token, "<=")) {
     // node = new_node(ND_SUB, (*token)->str, node, mul(token));
-    advance(token);
+    next(token);
     return new_node(ND_LTE, "<=", node, add(token));
   } else if (equal(*token, ">=")) {
     // node = new_node(ND_SUB, (*token)->str, node, mul(token));
-    advance(token);
+    next(token);
     return new_node(ND_GTE, ">=", node, add(token));
   } else if (equal(*token, "<")) {
-    advance(token);
+    next(token);
     return new_node(ND_LT, "<", node, add(token));
   } else if (equal(*token, ">")) {
-    advance(token);
+    next(token);
     return new_node(ND_GT, ">", node, add(token));
   }
   return node;
@@ -186,10 +187,10 @@ static Node *equality(Token **token) {
   Node *node = relational(token);
 
   if (equal(*token, "==")) {
-    advance(token);
+    next(token);
     return new_node(ND_EQ, "==", node, relational(token));
   } else if (equal(*token, "!=")) {
-    advance(token);
+    next(token);
     return new_node(ND_NEQ, "!=", node, relational(token));
   } else {
     return node;
@@ -200,7 +201,7 @@ static Node *assign(Token **token) {
   Node *node = equality(token);
 
   if (equal(*token, "=")) {
-    advance(token);
+    next(token);
     return new_node(ND_ASSIGN, "=", node, assign(token));
   }
 
@@ -209,11 +210,14 @@ static Node *assign(Token **token) {
 
 static Node *expr(Token **token) { return assign(token); }
 
+// stmt = "return" expr ";"
+//      | "{" compound-stmt
+//      | expr-stmt
 static Node *stmt(Token **token) {
   Node *node;
 
   if (equal(*token, "return")) {
-    advance(token);
+    next(token);
     node = calloc(1, sizeof(Node));
     node->kind = ND_RETURN;
     node->lhs = expr(token);
@@ -222,7 +226,7 @@ static Node *stmt(Token **token) {
   }
 
   if (equal(*token, "if")) {
-    advance(token);
+    next(token);
     expect(token, "(");
 
     node = calloc(1, sizeof(Node));
@@ -230,17 +234,13 @@ static Node *stmt(Token **token) {
     node->cond = expr(token);
 
     expect(token, ")");
-    node->then = expect_block(token);
 
     if (equal(*token, "else")) {
-      advance(token);
-      if (equal(*token, "if")) {
-        node->els = stmt(token);
-      } else {
-        node->els = expect_block(token);
-      }
+      next(token);
+      node->els = compound_stmt(token);
     }
 
+    node->then = compound_stmt(token);
     return node;
   }
 
@@ -250,20 +250,38 @@ static Node *stmt(Token **token) {
   return node;
 }
 
-static void program(Program *prog) {
-  int i = 0;
-  Token *cur = prog->tok;
-
-  while (!at_eof(cur)) {
-    Node *node = stmt(&cur);
-    prog->code[i] = node;
-    i++;
+// compound-stmt = stmt* "}"
+static Node *compound_stmt(Token **token) {
+  if (!equal(*token, "{")) {
+    return stmt(token);
   }
 
-  prog->code[i] = NULL;
+  next(token);
+
+  Node head = {};
+  Node *cur = &head;
+
+  while (!equal(*token, "}")) {
+    cur = cur->next = stmt(token);
+  }
+
+  expect(token, "}");
+  Node *node = new_node_block(&head);
+  return node;
 }
 
-void parse(Program *prog) {
-  locals = prog->locals;
-  return program(prog);
+void parse(Program **prog) {
+  Program *p = *prog;
+  locals = p->locals;
+  Token *cur = p->tok;
+
+  Segment *cur_seg = calloc(1, sizeof(Segment));
+  p->head = cur_seg;
+
+  while (!at_eof(cur)) {
+    cur_seg->contents = compound_stmt(&cur);
+    cur_seg->next = calloc(1, sizeof(Segment));
+
+    cur_seg = cur_seg->next;
+  }
 }

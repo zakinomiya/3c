@@ -26,6 +26,7 @@ typedef enum {
   ND_LVAR,    // local variable
   ND_RETURN,
   ND_IF,
+  ND_BLOCK,
 } NodeKind;
 
 typedef enum {
@@ -50,12 +51,16 @@ struct Node {
   NodeKind kind;
   Node *lhs;
   Node *rhs;
+
+  // Block Node
+  Node *body;
   int val;
   int offset;
   char *str;
   Node *cond;
   Node *then;
   Node *els;
+  Node *next;
 };
 
 struct LVar {
@@ -65,22 +70,25 @@ struct LVar {
   LVar *next;
 };
 
+typedef struct Segment Segment;
+struct Segment {
+  Node *contents;
+  Segment *next;
+};
+
 struct Program {
   char *input;
   int linenum;
   Token *tok;
-  Node *code[100];
+  Segment *head;
   LVar *locals;
 };
 
 // Function Declarations
-void gen(Node *node);
+void codegen(Program *prog);
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
-void print_main();
-void print_prologue(int offset);
-void print_epilogue();
-void parse(Program *prog);
+void parse(Program **prog);
 bool consume(char *p);
 void tokenize(Token *head, char *p);
 

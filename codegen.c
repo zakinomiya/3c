@@ -3,9 +3,6 @@
 
 #include "ccc.h"
 
-Node *code[100];
-LVar *locals;
-
 static int count() {
   static int cnt = 0;
   cnt++;
@@ -13,8 +10,8 @@ static int count() {
 }
 
 void print_main() {
-  printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
+  printf("  .intel_syntax noprefix\n");
+  printf("  .global main\n");
   printf("main:\n");
 }
 
@@ -72,6 +69,11 @@ void print_comment(char *fmt, ...) {
 }
 
 void gen(Node *node) {
+  int c = count();
+  if (node->kind == ND_BLOCK) {
+    printf(".L.body.%d:", c);
+    return gen(node->body);
+  }
   // check_ast(node);
   print_node(node);
   switch (node->kind) {
@@ -87,7 +89,6 @@ void gen(Node *node) {
       printf("  pop rax\n");
       printf("  cmp rax, 1\n");
 
-      int c = count();
       printf("  je .Lend.%d\n", c);
       if (node->els) {
         printf("  jne .Lelse.%d\n", c);
@@ -193,3 +194,20 @@ void gen(Node *node) {
   printf("  push rax\n");
 }
 
+void codegen(Program *prog) {
+  print_main();
+
+  print_prologue(16);
+  print_epilogue();
+
+  Segment *cur_seg = prog->head;
+  while (cur_seg->next) {
+    gen(cur_seg->contents);
+    printf("  pop rax\n");
+
+    cur_seg = cur_seg->next;
+  }
+
+  //  printf(".L.return:\n");
+  print_epilogue();
+}
