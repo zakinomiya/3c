@@ -8,7 +8,7 @@ assert() {
   test_file_name="tmp_${CASENUM}.s"
   CASENUM=$((CASENUM+1))
 
-  printf "Code:\n ${input}\n"
+  printf "Code: ${input}\n"
   ./ccc "${input}" > ${test_file_name}
   #./ccc "${input}" 
 
@@ -20,7 +20,7 @@ if [ "$actual" = "$expected" ]; then
     echo "OK"
     #rm ./${test_file_name}
   else 
-    echo "$input => $expected expected, but got $actual"
+    echo "$expected expected, but got $actual"
     echo "Test Failed"
     exit 1
   fi
@@ -84,3 +84,16 @@ if (1==0) {
 } else {
   return 10;
 }"
+assert 10 "
+if (1==0) {
+  return a;
+} else if (0==0) {
+  b = 11; 
+  return b-1;
+} else {
+  return 10;
+}"
+assert 10 "
+if (0==0) 
+  return 10;
+"

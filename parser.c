@@ -229,6 +229,7 @@ static Node *compound_stmt(Token **token) {
 
 // stmt = "return" expr ";"
 //      | "{" compound-stmt
+//      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | expr-stmt
 static Node *stmt(Token **token) {
   Node *node;
