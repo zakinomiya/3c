@@ -8,6 +8,7 @@ assert() {
   test_file_name="tmp_${CASENUM}.s"
   CASENUM=$((CASENUM+1))
 
+  printf "Code:\n ${input}\n"
   ./ccc "${input}" > ${test_file_name}
   #./ccc "${input}" 
 

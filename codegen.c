@@ -69,13 +69,15 @@ void print_comment(char *fmt, ...) {
 }
 
 void gen(Node *node) {
-  int c = count();
-  if (node->kind == ND_BLOCK) {
-    printf(".L.body.%d:", c);
-    return gen(node->body);
-  }
   // check_ast(node);
   print_node(node);
+
+  int c = count();
+  if (node->kind == ND_BLOCK) {
+    // printf(".L.body.%d:\n", c);
+    return gen(node->body);
+  }
+
   switch (node->kind) {
     case ND_RETURN:
       gen(node->lhs);
@@ -198,16 +200,15 @@ void codegen(Program *prog) {
   print_main();
 
   print_prologue(16);
-  print_epilogue();
 
   Segment *cur_seg = prog->head;
-  while (cur_seg->next) {
+  while (cur_seg) {
     gen(cur_seg->contents);
     printf("  pop rax\n");
 
     cur_seg = cur_seg->next;
   }
 
-  //  printf(".L.return:\n");
+  printf(".L.return:\n");
   print_epilogue();
 }

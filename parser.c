@@ -32,6 +32,9 @@ static void expect(Token **token, char *op) {
 static int expect_number(Token **token) {
   Token *tok = *token;
   if (tok->kind != TK_NUM) {
+    fprintf(stderr, "given token kind is %d\n", tok->kind);
+    fprintf(stderr, "given token len is %d\n", tok->len);
+    fprintf(stderr, "given token str is %s\n", tok->str);
     error_at(tok->str, "%s is not a number", tok->str);
   }
 
@@ -210,6 +213,20 @@ static Node *assign(Token **token) {
 
 static Node *expr(Token **token) { return assign(token); }
 
+// compound-stmt = stmt* "}"
+static Node *compound_stmt(Token **token) {
+  Node head = {};
+  Node *cur = &head;
+
+  while (!equal(*token, "}")) {
+    cur = cur->next = stmt(token);
+  }
+
+  Node *node = new_node_block(head.next);
+  expect(token, "}");
+  return node;
+}
+
 // stmt = "return" expr ";"
 //      | "{" compound-stmt
 //      | expr-stmt
@@ -225,6 +242,11 @@ static Node *stmt(Token **token) {
     return node;
   }
 
+  if (equal(*token, "{")) {
+    next(token);
+    return compound_stmt(token);
+  }
+
   if (equal(*token, "if")) {
     next(token);
     expect(token, "(");
@@ -234,39 +256,19 @@ static Node *stmt(Token **token) {
     node->cond = expr(token);
 
     expect(token, ")");
+    node->then = stmt(token);
 
     if (equal(*token, "else")) {
       next(token);
-      node->els = compound_stmt(token);
+      node->els = stmt(token);
     }
 
-    node->then = compound_stmt(token);
     return node;
   }
 
   node = expr(token);
   expect(token, ";");
 
-  return node;
-}
-
-// compound-stmt = stmt* "}"
-static Node *compound_stmt(Token **token) {
-  if (!equal(*token, "{")) {
-    return stmt(token);
-  }
-
-  next(token);
-
-  Node head = {};
-  Node *cur = &head;
-
-  while (!equal(*token, "}")) {
-    cur = cur->next = stmt(token);
-  }
-
-  expect(token, "}");
-  Node *node = new_node_block(&head);
   return node;
 }
 
@@ -279,9 +281,8 @@ void parse(Program **prog) {
   p->head = cur_seg;
 
   while (!at_eof(cur)) {
-    cur_seg->contents = compound_stmt(&cur);
-    cur_seg->next = calloc(1, sizeof(Segment));
-
-    cur_seg = cur_seg->next;
+    cur_seg->contents = stmt(&cur);
+    if (!at_eof(cur)) cur_seg = cur_seg->next = calloc(1, sizeof(Segment));
   }
 }
+
