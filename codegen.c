@@ -72,7 +72,6 @@ void gen(Node *node) {
   // check_ast(node);
   print_node(node);
 
-  int c = count();
   if (node->kind == ND_BLOCK) {
     // printf(".L.body.%d:\n", c);
     return gen(node->body);
@@ -86,7 +85,8 @@ void gen(Node *node) {
       printf("  pop rbp\n");
       printf("  ret\n");
       return;
-    case ND_IF:
+    case ND_IF: {
+      int c = count();
       gen(node->cond);
       printf("  pop rax\n");
       printf("  cmp rax, 1\n");
@@ -103,6 +103,29 @@ void gen(Node *node) {
         gen(node->els);
       }
       return;
+    }
+    case ND_FOR: {
+      int c = count();
+      if (node->init) {
+        gen(node->init);
+      }
+      printf("L.begin.%d:\n", c);
+      if (node->cond) {
+        gen(node->cond);
+        printf("  pop rax\n");
+        printf("  cmp rax, 1\n");
+        printf("  jne L.break.%d\n", c);
+      }
+      gen(node->then);
+
+      if (node->inc) {
+        gen(node->inc);
+      }
+
+      printf("  jmp L.begin.%d\n", c);
+      printf("L.break.%d:\n", c);
+      return;
+    }
     case ND_NUM:
       printf("  push %d\n", node->val);
       return;

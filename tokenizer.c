@@ -40,6 +40,18 @@ void tokenize(Token *head, char *p) {
       continue;
     }
 
+    if (startswith(p, "for") && !is_alnum(p[3])) {
+      cur = new_token(TK_FOR, cur, p, 3);
+      p += 3;
+      continue;
+    }
+
+    if (startswith(p, "while") && !is_alnum(p[5])) {
+      cur = new_token(TK_FOR, cur, p, 5);
+      p += 5;
+      continue;
+    }
+
     if (startswith(p, "if") && !is_alnum(p[2])) {
       cur = new_token(TK_IF, cur, p, 2);
       p += 2;

@@ -230,6 +230,8 @@ static Node *compound_stmt(Token **token) {
 // stmt = "return" expr ";"
 //      | "{" compound-stmt
 //      | "if" "(" expr ")" stmt ("else" stmt)?
+//      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
+//      | "while" "(" expr ")" stmt
 //      | expr-stmt
 static Node *stmt(Token **token) {
   Node *node;
@@ -263,6 +265,46 @@ static Node *stmt(Token **token) {
       next(token);
       node->els = stmt(token);
     }
+
+    return node;
+  }
+
+  if (equal(*token, "while")) {
+    next(token);
+    expect(token, "(");
+
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_FOR;
+    node->cond = expr(token);
+
+    expect(token, ")");
+    node->then = stmt(token);
+
+    return node;
+  }
+
+  if (equal(*token, "for")) {
+    next(token);
+    expect(token, "(");
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_FOR;
+
+    if (!equal(*token, ";")) {
+      node->init = expr(token);
+    }
+    expect(token, ";");
+
+    if (!equal(*token, ";")) {
+      node->cond = expr(token);
+    }
+    expect(token, ";");
+
+    if (!equal(*token, ")")) {
+      node->inc = expr(token);
+    }
+
+    expect(token, ")");
+    node->then = stmt(token);
 
     return node;
   }

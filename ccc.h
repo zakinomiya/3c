@@ -26,6 +26,8 @@ typedef enum {
   ND_LVAR,    // local variable
   ND_RETURN,
   ND_IF,
+  ND_FOR,
+  ND_WHILE,
   ND_BLOCK,
 } NodeKind;
 
@@ -36,6 +38,8 @@ typedef enum {
   TK_EOF,
   TK_RETURN,
   TK_IF,
+  TK_FOR,
+  TK_WHILE,
 } TokenKind;
 
 // Struct definitions
@@ -57,9 +61,14 @@ struct Node {
   int val;
   int offset;
   char *str;
+
+  // if and for
   Node *cond;
   Node *then;
   Node *els;
+  Node *init;
+  Node *inc;
+
   Node *next;
 };
 

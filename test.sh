@@ -97,3 +97,17 @@ assert 10 "
 if (0==0) 
   return 10;
 "
+assert 10 "
+a = 1;
+while (a < 10) {
+  a = a +1;
+}
+return a;
+"
+assert 11 "
+a = 1;
+for (;a<11;a=a+1) {
+  a = a;
+}
+return a;
+"
