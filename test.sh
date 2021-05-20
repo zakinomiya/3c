@@ -105,8 +105,7 @@ while (a < 10) {
 return a;
 "
 assert 11 "
-a = 1;
-for (;a<11;a=a+1) {
+for (a=0;a<11;a=a+1) {
   a = a;
 }
 return a;
