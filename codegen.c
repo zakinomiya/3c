@@ -3,6 +3,8 @@
 
 #include "ccc.h"
 
+void gen(Node *node);
+
 static int count() {
   static int cnt = 0;
   cnt++;
@@ -49,12 +51,30 @@ void print_node(Node *node) {
 }
 
 void check_ast(Node *node) {
-  printf("# node kind is %d\n", node->kind);
+  int nest_c = count();
+  printf("# node kind is %s\n", strndk(node->kind));
   printf("# node str is %s\n", node->str);
   printf("# node val is %d\n", node->val);
 
-  if (node->lhs) check_ast(node->lhs);
-  if (node->rhs) check_ast(node->rhs);
+  if (node->body) {
+    printf("# ---- Body %d\n", nest_c);
+    check_ast(node->body);
+  }
+
+  if (node->lhs) {
+    printf("# ---- LHS %d\n", nest_c);
+    check_ast(node->lhs);
+  }
+
+  if (node->rhs) {
+    printf("# ---- RHS %d\n", nest_c);
+    check_ast(node->rhs);
+  }
+
+  if (node->next) {
+    printf("#      NEXT \n");
+    check_ast(node->next);
+  }
   return;
 }
 
@@ -68,17 +88,20 @@ void print_comment(char *fmt, ...) {
   va_end(ap);
 }
 
-void gen(Node *node) {
-  // check_ast(node);
-  print_node(node);
+void gen_func(Node *node) {
+  printf(".L.fn.%s:\n", node->name);
+  gen(node->body);
+  printf("  ret\n");
+}
 
-  if (node->kind == ND_BLOCK) {
-    // printf(".L.body.%d:\n", c);
+void gen(Node *node) {
+  if (node->kind == ND_BLOCK || node->kind == ND_FNCALL) {
     return gen(node->body);
   }
 
   switch (node->kind) {
     case ND_RETURN:
+      print_comment("RETURN\n");
       gen(node->lhs);
       printf("  pop rax\n");
       printf("  mov rsp, rbp\n");
@@ -86,6 +109,7 @@ void gen(Node *node) {
       printf("  ret\n");
       return;
     case ND_IF: {
+      print_comment("IF\n");
       int c = count();
       gen(node->cond);
       printf("  pop rax\n");
@@ -105,16 +129,17 @@ void gen(Node *node) {
       return;
     }
     case ND_FOR: {
+      print_comment("FOR\n");
       int c = count();
       if (node->init) {
         gen(node->init);
       }
-      printf("L.begin.%d:\n", c);
+      printf(".L.begin.%d:\n", c);
       if (node->cond) {
         gen(node->cond);
         printf("  pop rax\n");
         printf("  cmp rax, 1\n");
-        printf("  jne L.break.%d\n", c);
+        printf("  jne .L.break.%d\n", c);
       }
       gen(node->then);
 
@@ -122,14 +147,16 @@ void gen(Node *node) {
         gen(node->inc);
       }
 
-      printf("  jmp L.begin.%d\n", c);
-      printf("L.break.%d:\n", c);
+      printf("  jmp .L.begin.%d\n", c);
+      printf(".L.break.%d:\n", c);
       return;
     }
     case ND_NUM:
+      print_comment("NUM\n");
       printf("  push %d\n", node->val);
       return;
     case ND_ASSIGN:
+      print_comment("ASSIGN\n");
       // push the lval address to the stack
       gen_lval(node->lhs);
       // push the num value to the stack. or push another variable to the stack
@@ -146,8 +173,14 @@ void gen(Node *node) {
       printf("  mov [rax], rdi\n");
       // push the value to the stack
       printf("  push rdi\n");
+
+      if (node->next) gen(node->next);
       return;
     case ND_LVAR:
+      print_comment("LVAR\n");
+      // if (node->is_func) {
+      //  return gen_func(node);
+      //}
       // get the value of the local variable and push it to the stack
       // This case is always read after ND_ASSIGN is read beacause of the rule
       // of the tree structure.
@@ -161,6 +194,11 @@ void gen(Node *node) {
       // push the value in the rax to the stack
       printf("  push rax\n");
       return;
+      // case ND_FNCALL:
+      //  printf("  call .L.fn.%s:\n", node->name);
+      //  printf("  mov rax, eax\n");
+      //  printf("  push rax\n");
+      //  return;
   }
 
   gen(node->lhs);
@@ -226,7 +264,16 @@ void codegen(Program *prog) {
 
   Segment *cur_seg = prog->head;
   while (cur_seg) {
-    gen(cur_seg->contents);
+    Node *cur_nd = cur_seg->contents;
+
+    printf("# ---- AST ----\n");
+    check_ast(cur_nd);
+    printf("# -------------\n");
+
+    while (cur_nd) {
+      gen(cur_nd);
+      cur_nd = cur_nd->next;
+    }
     printf("  pop rax\n");
 
     cur_seg = cur_seg->next;

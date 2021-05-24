@@ -29,6 +29,7 @@ typedef enum {
   ND_FOR,
   ND_WHILE,
   ND_BLOCK,
+  ND_FNCALL,
 } NodeKind;
 
 typedef enum {
@@ -69,6 +70,10 @@ struct Node {
   Node *init;
   Node *inc;
 
+  // func
+  char *name;
+  bool is_func;
+
   Node *next;
 };
 
@@ -100,5 +105,7 @@ void error(char *fmt, ...);
 void parse(Program **prog);
 bool consume(char *p);
 void tokenize(Token *head, char *p);
+char *strndk(NodeKind nk);
+char *strtk(TokenKind tk);
 
 extern Program *prog;

@@ -6,7 +6,7 @@ static Node *expr(Token **token);
 static Node *compound_stmt(Token **token);
 
 static void next(Token **token) {
-  fprintf(stderr, "%d,", (*token)->kind);
+  fprintf(stderr, "%s,", strtk((*token)->kind));
   fprintf(stderr, "%s,", (*token)->str);
   fprintf(stderr, "%d,", (*token)->val);
   fprintf(stderr, "%d\n", (*token)->len);
@@ -100,6 +100,14 @@ static Node *primary(Token **token) {
     Node *node = calloc(1, sizeof(Node));
     node->kind = ND_LVAR;
     node->str = (*token)->str;
+
+    // if (equal((*token)->next, "(")) {
+    //  node->kind = ND_FNCALL;
+    //  node->name = (*token)->str;
+    //  next(token);
+    //  expect(token, ")");
+    //  return node;
+    //}
 
     LVar *lvar = find_lvar(*token);
     if (lvar) {
@@ -315,6 +323,30 @@ static Node *stmt(Token **token) {
   return node;
 }
 
+// ToBe: function-definition = ident "(" ident? ("," ident)?  ")" "{"
+// compound-stmt
+//
+// AsIs: function-definition = ident "("")" "{" compound-stmt
+Node *function_def(Token **token) {
+  if ((*token)->kind != TK_IDENT) {
+    error("Failed to parse");
+  }
+
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = ND_BLOCK;
+  node->name = (*token)->str;
+  next(token);
+
+  expect(token, "(");
+  expect(token, ")");
+  expect(token, "{");
+
+  return node->body = compound_stmt(token);
+}
+
+// program = function-definition
+Node *program(Token **token) { return function_def(token); }
+
 void parse(Program **prog) {
   Program *p = *prog;
   locals = p->locals;
@@ -324,7 +356,7 @@ void parse(Program **prog) {
   p->head = cur_seg;
 
   while (!at_eof(cur)) {
-    cur_seg->contents = stmt(&cur);
+    cur_seg->contents = program(&cur);
     if (!at_eof(cur)) cur_seg = cur_seg->next = calloc(1, sizeof(Segment));
   }
 }

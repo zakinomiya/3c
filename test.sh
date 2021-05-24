@@ -26,87 +26,136 @@ if [ "$actual" = "$expected" ]; then
   fi
 }
 
-assert 5 "1+4 ; "
-assert 5 "1+1+1+1+1 ; "
-assert 5 "foo=1; foo+4 ; "
-assert 6 "foo=1 ; foo = foo +4; 1 + foo;"
-assert 10 "6+4;"
-assert 7 "
+assert 5 "main () {
+  a=1;
+  1+4; 
+}"
+assert 5 "main () {
+  return 1+1+1+1+1; 
+}
+"
+assert 5 "main () {
+  foo=2;
+  foo+3;
+}"
+assert 6 "main () {
+  foo=1; 
+  foo = foo +4;
+  return 1 + foo;
+}
+"
+assert 10 "main () {
+  return 6+4;
+}
+"
+assert 7 "main() {
  a = 3;
  b = 4;
- a + b;
+ return a + b;
+}
 "
-assert 15 "
+assert 15 "main () {
  foo = 10;
  bar = 5;
- foo + bar;
+ return foo + bar;
+}
 "
-assert 10 "
+assert 10 "main () {
  foo = 10;
  bar = 0;
  return foo + bar;
-"
-assert 42 "if (0) {return 42;}"
-assert 10 "if (1-1) {return 10;}"
-assert 15 "if (0==0) {return 15;}"
-assert 10 "if (1==0) {return 15;} else {return 10;}"
-assert 5 "
-a = 5;
-b = 0;
-if (a>=b) {
-  return a;
-} else {
-  return b;
-}"
-assert 0 "
-a = 5;
-b = 0;
-if (1==0) {
-  return a;
-} else {
-  return b;
-}"
-assert 6 "
-a = 5;
-b = 0;
-if (a>=b) {
-  return a + 1;
-} else {
-  return b;
-}"
-assert 0 "
-a = 5;
-b = 1;
-if (1==0) {
-  return a;
-} else if (0==0) {
-  return b-1;
-} else {
-  return 10;
-}"
-assert 10 "
-if (1==0) {
-  return a;
-} else if (0==0) {
-  b = 11; 
-  return b-1;
-} else {
-  return 10;
-}"
-assert 10 "
-if (0==0) 
-  return 10;
-"
-assert 10 "
-a = 1;
-while (a < 10) {
-  a = a +1;
 }
-return a;
 "
-assert 11 "
-for (a=0;a<11;a=a+1) {
-  a = a;
+assert 42 "main(){
+  if (0) {
+    return 42;
+  }
 }
-return a;
+"
+assert 10 "main () {
+  if (1-1) {
+    return 10;
+  }
+}
+"
+assert 15 "main() {
+  if (0==0) {
+    return 15;
+  }
+}
+"
+assert 10 "main () {
+  if (1==0) {
+    return 15;
+  } else {
+    return 10;
+  }
+}"
+assert 5 "main() {
+  a = 5;
+  b = 0;
+  if (a>=b) {
+    return a;
+  } else {
+    return b;
+  }
+}"
+assert 0 "main() {
+  a = 5;
+  b = 0;
+  if (1==0) {
+    return a;
+  } else {
+    return b;
+  }
+}"
+assert 6 "main () {
+  a = 5;
+  b = 0;
+  if (a>=b) {
+    return a + 1;
+  } else {
+    return b;
+  }
+}"
+assert 0 "main () {
+  a = 5;
+  b = 1;
+  if (1==0) {
+    return a;
+  } else if (0==0) {
+    return b-1;
+  } else {
+    return 10;
+  }
+}"
+assert 10 "main () {
+  if (1==0) {
+    return a;
+  } else if (0==0) {
+    b = 11; 
+    return b-1;
+  } else {
+    return 10;
+  }
+}"
+assert 10 "main() {
+  if (0==0) 
+    return 10;
+}
+"
+assert 10 "main() {
+  a = 1;
+  while (a < 10) {
+    a = a +1;
+  }
+  return a;
+}
+"
+assert 11 "main (){
+  for (a=0;a<11;a=a+1) {
+    a = a;
+  }
+  return a;
+}
 "
