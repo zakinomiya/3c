@@ -95,7 +95,11 @@ void gen_func(Node *node) {
 }
 
 void gen(Node *node) {
-  if (node->kind == ND_BLOCK || node->kind == ND_FNCALL) {
+  if (!node) {
+    return;
+  }
+
+  if (node->kind == ND_BLOCK) {
     return gen(node->body);
   }
 
@@ -107,7 +111,7 @@ void gen(Node *node) {
       printf("  mov rsp, rbp\n");
       printf("  pop rbp\n");
       printf("  ret\n");
-      return;
+      break;
     case ND_IF: {
       print_comment("IF\n");
       int c = count();
@@ -126,7 +130,7 @@ void gen(Node *node) {
         printf(".Lelse.%d:\n", c);
         gen(node->els);
       }
-      return;
+      break;
     }
     case ND_FOR: {
       print_comment("FOR\n");
@@ -149,12 +153,12 @@ void gen(Node *node) {
 
       printf("  jmp .L.begin.%d\n", c);
       printf(".L.break.%d:\n", c);
-      return;
+      break;
     }
     case ND_NUM:
       print_comment("NUM\n");
       printf("  push %d\n", node->val);
-      return;
+      break;
     case ND_ASSIGN:
       print_comment("ASSIGN\n");
       // push the lval address to the stack
@@ -173,9 +177,7 @@ void gen(Node *node) {
       printf("  mov [rax], rdi\n");
       // push the value to the stack
       printf("  push rdi\n");
-
-      if (node->next) gen(node->next);
-      return;
+      break;
     case ND_LVAR:
       print_comment("LVAR\n");
       // if (node->is_func) {
@@ -193,7 +195,7 @@ void gen(Node *node) {
       printf("  mov rax, [rax]\n");
       // push the value in the rax to the stack
       printf("  push rax\n");
-      return;
+      break;
       // case ND_FNCALL:
       //  printf("  call .L.fn.%s:\n", node->name);
       //  printf("  mov rax, eax\n");
@@ -201,11 +203,16 @@ void gen(Node *node) {
       //  return;
   }
 
-  gen(node->lhs);
-  gen(node->rhs);
+  if (node->next) {
+    return gen(node->next);
+  }
 
-  printf("  pop rdi\n");
-  printf("  pop rax\n");
+  if (node->lhs && node->lhs) {
+    gen(node->lhs);
+    gen(node->rhs);
+    printf("  pop rdi\n");
+    printf("  pop rax\n");
+  }
 
   // operation
   switch (node->kind) {
@@ -252,6 +259,8 @@ void gen(Node *node) {
       printf("  setge al\n");
       printf("  movzb rax, al\n");
       break;
+    default:
+      return;
   }
 
   printf("  push rax\n");
@@ -270,10 +279,7 @@ void codegen(Program *prog) {
     check_ast(cur_nd);
     printf("# -------------\n");
 
-    while (cur_nd) {
-      gen(cur_nd);
-      cur_nd = cur_nd->next;
-    }
+    gen(cur_nd);
     printf("  pop rax\n");
 
     cur_seg = cur_seg->next;
