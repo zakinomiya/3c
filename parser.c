@@ -6,10 +6,10 @@ static Node *expr(Token **token);
 static Node *compound_stmt(Token **token);
 
 static void next(Token **token) {
-  fprintf(stderr, "%s,", strtk((*token)->kind));
-  fprintf(stderr, "%s,", (*token)->str);
-  fprintf(stderr, "%d,", (*token)->val);
-  fprintf(stderr, "%d\n", (*token)->len);
+  // fprintf(stderr, "%s,", strtk((*token)->kind));
+  // fprintf(stderr, "%s,", (*token)->str);
+  // fprintf(stderr, "%d,", (*token)->val);
+  // fprintf(stderr, "%d\n", (*token)->len);
 
   *token = (*token)->next;
 }

@@ -67,13 +67,13 @@ assert 10 "main () {
 }
 "
 assert 42 "main(){
-  if (0) {
+  if (1) {
     return 42;
   }
 }
 "
 assert 10 "main () {
-  if (1-1) {
+  if (1-0) {
     return 10;
   }
 }
@@ -144,6 +144,12 @@ assert 10 "main() {
     return 10;
 }
 "
+assert 5 "main() {
+  if (0==1) 
+    return 10;
+  return 5;
+}
+"
 assert 10 "main() {
   a = 1;
   while (a < 10) {
@@ -155,6 +161,33 @@ assert 10 "main() {
 assert 11 "main (){
   for (a=0;a<11;a=a+1) {
     a = a;
+  }
+  return a;
+}
+"
+assert 11 "main (){
+  a = 0;
+  for (;a<11;a=a+1) {
+    a = a;
+  }
+  return a;
+}
+"
+assert 11 "main (){
+  a = 0;
+  for (;a < 11;) {
+    a = a + 1;
+  }
+  return a;
+}
+"
+assert 11 "main (){
+  a = 0;
+  for (;;) {
+    a = a + 1;
+    if (a==11) {
+      return a;
+    }
   }
   return a;
 }

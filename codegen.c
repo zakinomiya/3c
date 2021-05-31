@@ -108,9 +108,11 @@ void gen(Node *node) {
       print_comment("RETURN\n");
       gen(node->lhs);
       printf("  pop rax\n");
-      printf("  mov rsp, rbp\n");
-      printf("  pop rbp\n");
-      printf("  ret\n");
+
+      printf("  jmp .L.return\n");
+      // printf("  mov rsp, rbp\n");
+      // printf("  pop rbp\n");
+      // printf("  ret\n");
       break;
     case ND_IF: {
       print_comment("IF\n");
@@ -119,15 +121,15 @@ void gen(Node *node) {
       printf("  pop rax\n");
       printf("  cmp rax, 1\n");
 
-      printf("  je .Lend.%d\n", c);
-      if (node->els) {
-        printf("  jne .Lelse.%d\n", c);
-      }
-      printf(".Lend.%d:\n", c);
+      printf("  je .L.end.%d\n", c);
+      // if (node->els) {
+      printf("  jne .L.else.%d\n", c);
 
+      printf(".L.end.%d:\n", c);
       gen(node->then);
+
+      printf(".L.else.%d:\n", c);
       if (node->els) {
-        printf(".Lelse.%d:\n", c);
         gen(node->els);
       }
       break;
@@ -145,6 +147,7 @@ void gen(Node *node) {
         printf("  cmp rax, 1\n");
         printf("  jne .L.break.%d\n", c);
       }
+
       gen(node->then);
 
       if (node->inc) {
@@ -192,6 +195,7 @@ void gen(Node *node) {
       printf("  pop rax\n");
       // read the value from the memory to which the value in the rax points and
       // copy it to the rax
+      printf("# variable %s\n", node->str);
       printf("  mov rax, [rax]\n");
       // push the value in the rax to the stack
       printf("  push rax\n");
