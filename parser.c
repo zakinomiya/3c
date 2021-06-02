@@ -101,13 +101,14 @@ static Node *primary(Token **token) {
     node->kind = ND_LVAR;
     node->str = (*token)->str;
 
-    // if (equal((*token)->next, "(")) {
-    //  node->kind = ND_FNCALL;
-    //  node->name = (*token)->str;
-    //  next(token);
-    //  expect(token, ")");
-    //  return node;
-    //}
+    if (equal((*token)->next, "(")) {
+      node->kind = ND_FNCALL;
+      node->name = (*token)->str;
+      next(token);
+      next(token);
+      expect(token, ")");
+      return node;
+    }
 
     LVar *lvar = find_lvar(*token);
     if (lvar) {
@@ -319,9 +320,7 @@ static Node *stmt(Token **token) {
 
   node = expr(token);
   expect(token, ";");
-
-  return node;
-}
+return node; }
 
 // ToBe: function-definition = ident "(" ident? ("," ident)?  ")" "{"
 // compound-stmt
@@ -333,15 +332,19 @@ Node *function_def(Token **token) {
   }
 
   Node *node = calloc(1, sizeof(Node));
-  node->kind = ND_BLOCK;
   node->name = (*token)->str;
+  node->str = (*token)->str;
+  node->kind = ND_BLOCK;
+  node->is_func = true;
+
   next(token);
 
   expect(token, "(");
   expect(token, ")");
   expect(token, "{");
 
-  return node->body = compound_stmt(token);
+   node->body = compound_stmt(token);
+   return node;
 }
 
 // program = function-definition
@@ -357,7 +360,10 @@ void parse(Program **prog) {
 
   while (!at_eof(cur)) {
     cur_seg->contents = program(&cur);
-    if (!at_eof(cur)) cur_seg = cur_seg->next = calloc(1, sizeof(Segment));
+    if (!at_eof(cur)) {
+      cur_seg->next = calloc(1, sizeof(Segment));
+      cur_seg = cur_seg->next;
+    }
   }
 }
 

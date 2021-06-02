@@ -20,6 +20,6 @@ test: ccc
 		${RUN} ./test.sh
 
 clean:
-	rm tmp* ccc *.o core || true
+	rm -f tmp* ccc *.o core || true
 
 .PHONY: test clean

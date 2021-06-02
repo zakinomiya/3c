@@ -102,8 +102,8 @@ struct Program {
 void codegen(Program *prog);
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
+void error(char *fmt, ...);
 void parse(Program **prog);
-bool consume(char *p);
 void tokenize(Token *head, char *p);
 char *strndk(NodeKind nk);
 char *strtk(TokenKind tk);

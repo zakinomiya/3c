@@ -20,8 +20,7 @@ if [ "$actual" = "$expected" ]; then
     echo "OK"
     #rm ./${test_file_name}
   else 
-    echo "$expected expected, but got $actual"
-    echo "Test Failed"
+    echo "$expected expected, but got $actual" echo "Test Failed"
     exit 1
   fi
 }
@@ -191,4 +190,23 @@ assert 11 "main (){
   }
   return a;
 }
+"
+assert 11 "
+fn_test() {
+  b = 0;
+  return b;
+}
+
+main (){
+  a = 0;
+  fn_test();
+  for (;;) {
+    a = a + 1;
+    if (a==11) {
+      return a;
+    }
+  }
+  return a;
+}
+
 "

@@ -54,6 +54,7 @@ void check_ast(Node *node) {
   int nest_c = count();
   printf("# node kind is %s\n", strndk(node->kind));
   printf("# node str is %s\n", node->str);
+  printf("# node name is %s\n", node->name);
   printf("# node val is %d\n", node->val);
 
   if (node->body) {
@@ -100,10 +101,19 @@ void gen(Node *node) {
   }
 
   if (node->kind == ND_BLOCK) {
+    if(node->is_func &&memcmp(node->name, "main", 4) != 0 ){
+      printf(".L.fn.%s:\n", node->name);
+    }
     return gen(node->body);
   }
 
   switch (node->kind) {
+    case ND_FNCALL:
+      print_comment("FNCALL\n");
+      printf("  call .L.fn.%s\n", node->name);
+      printf("  pop rax\n");
+
+      break;
     case ND_RETURN:
       print_comment("RETURN\n");
       gen(node->lhs);
