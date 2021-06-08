@@ -320,7 +320,8 @@ static Node *stmt(Token **token) {
 
   node = expr(token);
   expect(token, ";");
-return node; }
+  return node;
+}
 
 // ToBe: function-definition = ident "(" ident? ("," ident)?  ")" "{"
 // compound-stmt
@@ -343,8 +344,8 @@ Node *function_def(Token **token) {
   expect(token, ")");
   expect(token, "{");
 
-   node->body = compound_stmt(token);
-   return node;
+  node->body = compound_stmt(token);
+  return node;
 }
 
 // program = function-definition

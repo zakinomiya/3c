@@ -97,33 +97,50 @@ void gen_func(Node *node) {
 
 void gen(Node *node) {
   if (!node) {
+    print_comment("# No node found");
     return;
   }
 
   if (node->kind == ND_BLOCK) {
-    if(node->is_func &&memcmp(node->name, "main", 4) != 0 ){
+    if (node->is_func) {
+      print_comment("# enter function block\n");
+      if (memcmp(node->name, "main", 4) == 0) {
+        print_comment("# main\n");
+        // printf("main:\n");
+        gen(node->body);
+        printf("  jmp .L.return\n");
+        return;
+      }
+
+      print_comment("# %s\n", node->name);
       printf(".L.fn.%s:\n", node->name);
+      return gen(node->body);
     }
+
+    print_comment("# other block type\n");
     return gen(node->body);
   }
 
   switch (node->kind) {
-    case ND_FNCALL:
+    case ND_FNCALL: {
       print_comment("FNCALL\n");
       printf("  call .L.fn.%s\n", node->name);
       printf("  pop rax\n");
 
       break;
-    case ND_RETURN:
+    }
+    case ND_RETURN: {
       print_comment("RETURN\n");
       gen(node->lhs);
       printf("  pop rax\n");
+      // printf("  ret\n");
 
       printf("  jmp .L.return\n");
       // printf("  mov rsp, rbp\n");
       // printf("  pop rbp\n");
       // printf("  ret\n");
       break;
+    }
     case ND_IF: {
       print_comment("IF\n");
       int c = count();
@@ -221,7 +238,7 @@ void gen(Node *node) {
     return gen(node->next);
   }
 
-  if (node->lhs && node->lhs) {
+  if (node->rhs && node->lhs) {
     gen(node->lhs);
     gen(node->rhs);
     printf("  pop rdi\n");
@@ -274,6 +291,7 @@ void gen(Node *node) {
       printf("  movzb rax, al\n");
       break;
     default:
+      print_comment("# no operator found\n");
       return;
   }
 

@@ -40,6 +40,8 @@ char* strndk(NodeKind nk) {
       return "ND_BLOCK";
     case ND_FNCALL:
       return "ND_FNCALL";
+    case ND_FN:
+      return "ND_FN";
     default:
       return "ND_UNKNOWN";
   }

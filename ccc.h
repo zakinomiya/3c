@@ -30,6 +30,7 @@ typedef enum {
   ND_WHILE,
   ND_BLOCK,
   ND_FNCALL,
+  ND_FN,
 } NodeKind;
 
 typedef enum {
