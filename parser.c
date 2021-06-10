@@ -1,9 +1,11 @@
 #include "ccc.h"
 
-static LVar *locals;
+static Var *locals;
+static Var *globals;
 static Node *stmt(Token **token);
 static Node *expr(Token **token);
 static Node *compound_stmt(Token **token);
+static Node *assign(Token **token);
 
 static void next(Token **token) {
   // fprintf(stderr, "%s,", strtk((*token)->kind));
@@ -76,14 +78,73 @@ static Node *new_node_num(int val) {
   return node;
 }
 
-static LVar *find_lvar(Token *tok) {
-  for (LVar *var = locals; var; var = var->next) {
+static Var *find_var(Token *tok) {
+  for (Var *var = locals; var; var = var->next) {
+    if (var->len == tok->len && !memcmp(tok->str, var->name, tok->len)) {
+      return var;
+    }
+  }
+
+  for (Var *var = locals; var; var = var->next) {
     if (var->len == tok->len && !memcmp(tok->str, var->name, tok->len)) {
       return var;
     }
   }
 
   return NULL;
+}
+
+// funcall = (assign ("," assign)*)? ")"
+static Node *funcall(Token **token) {
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = ND_FNCALL;
+  node->name = (*token)->str;
+  node->argc = 0;
+  next(token);
+  expect(token, "(");
+
+  while (!equal(*token, ")")) {
+    if (node->args) {
+      node->args->next = assign(token);
+    } else {
+      node->args = assign(token);
+    }
+  }
+
+  expect(token, ")");
+  return node;
+}
+
+static Node *expect_ident(Token **token) {
+  if (equal((*token)->next, "(")) {
+    return funcall(token);
+  }
+
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = ND_LVAR;
+  node->str = (*token)->str;
+
+  Var *var = find_var(*token);
+  if (var) {
+    next(token);
+    node->offset = var->offset;
+    return node;
+  }
+
+  var = calloc(1, sizeof(Var));
+  var->len = (*token)->len;
+  var->name = (*token)->str;
+  var->offset = 8;
+
+  if (locals) {
+    var->next = locals;
+    var->offset = locals->offset + 8;
+  }
+
+  node->offset = var->offset;
+  locals = var;
+  next(token);
+  return node;
 }
 
 static Node *primary(Token **token) {
@@ -97,40 +158,7 @@ static Node *primary(Token **token) {
   }
 
   if ((*token)->kind == TK_IDENT) {
-    Node *node = calloc(1, sizeof(Node));
-    node->kind = ND_LVAR;
-    node->str = (*token)->str;
-
-    if (equal((*token)->next, "(")) {
-      node->kind = ND_FNCALL;
-      node->name = (*token)->str;
-      next(token);
-      next(token);
-      expect(token, ")");
-      return node;
-    }
-
-    LVar *lvar = find_lvar(*token);
-    if (lvar) {
-      next(token);
-      node->offset = lvar->offset;
-      return node;
-    }
-
-    lvar = calloc(1, sizeof(LVar));
-    lvar->len = (*token)->len;
-    lvar->name = (*token)->str;
-    lvar->offset = 48;
-
-    if (locals) {
-      lvar->next = locals;
-      lvar->offset = locals->offset + 8;
-    }
-
-    node->offset = lvar->offset;
-    locals = lvar;
-    next(token);
-    return node;
+    return expect_ident(token);
   }
 
   return new_node_num(expect_number(token));
@@ -249,6 +277,10 @@ static Node *stmt(Token **token) {
     next(token);
     node = calloc(1, sizeof(Node));
     node->kind = ND_RETURN;
+    if (equal(*token, ";")) {
+      next(token);
+      return node;
+    }
     node->lhs = expr(token);
     expect(token, ";");
     return node;
@@ -325,7 +357,6 @@ static Node *stmt(Token **token) {
 
 // ToBe: function-definition = ident "(" ident? ("," ident)?  ")" "{"
 // compound-stmt
-//
 // AsIs: function-definition = ident "("")" "{" compound-stmt
 Node *function_def(Token **token) {
   if ((*token)->kind != TK_IDENT) {
@@ -337,14 +368,37 @@ Node *function_def(Token **token) {
   node->str = (*token)->str;
   node->kind = ND_BLOCK;
   node->is_func = true;
+  node->argc = 6;
 
   next(token);
 
   expect(token, "(");
+
+  if (!equal(*token, ")")) {
+    if (node->args) {
+      node->args->next = expect_ident(token);
+    } else {
+      node->args = expect_ident(token);
+    }
+
+    int i = 0;
+    while (equal(*token, ",")) {
+      if (++i > 128) {
+        error("too many arguments for a function");
+      }
+
+      next(token);
+      node->args->next = expect_ident(token);
+      node->argc += i;
+    }
+  }
+
   expect(token, ")");
   expect(token, "{");
 
   node->body = compound_stmt(token);
+  node->locals = locals;
+  locals = NULL;
   return node;
 }
 
@@ -353,7 +407,6 @@ Node *program(Token **token) { return function_def(token); }
 
 void parse(Program **prog) {
   Program *p = *prog;
-  locals = p->locals;
   Token *cur = p->tok;
 
   Segment *cur_seg = calloc(1, sizeof(Segment));

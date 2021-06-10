@@ -37,8 +37,7 @@ void print_prologue(Node *node) {
   print_comment("Prologue\n");
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, %d\n",
-         (int)(8 * sizeof(node->args) / sizeof(node->args[0])));
+  printf("  sub rsp, %d\n", (int)(8 * node->argc));
 }
 
 void push_args(Node **args) {

@@ -191,15 +191,40 @@ assert 11 "main (){
   return a;
 }
 "
-assert 13 "
+assert 14 "
 fn_test() {
   b = 13;
   return b;
 }
 
 main (){
-  a = fn_test();
+  a = 1;
+  a = a +  fn_test();
   return a;
 }
+"
 
+assert 11 "
+fn_test() {
+  b = 0;
+  while (b < 10) {
+    b = b + 1;
+  }
+  return b;
+}
+
+main (){
+  a = 1;
+  a = a +  fn_test();
+  return a;
+}
+"
+assert 11 "
+fn_test(a, b) {
+  return;
+}
+
+main (){
+  return 11;
+}
 "

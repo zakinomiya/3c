@@ -78,7 +78,7 @@ void tokenize(Token *head, char *p) {
     // if next letter is '+' or '-' create token and set the new one as current
     if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' ||
         *p == ')' || *p == '<' || *p == '>' || *p == '=' || *p == ';' ||
-        *p == '{' || *p == '}') {
+        *p == ',' || *p == '{' || *p == '}') {
       cur = new_token(TK_RESERVED, cur, p, 1);
       p++;
       continue;

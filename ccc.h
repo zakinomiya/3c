@@ -8,7 +8,7 @@
 // Type definitions
 typedef struct Node Node;
 typedef struct Token Token;
-typedef struct LVar LVar;
+typedef struct Var Var;
 typedef struct Program Program;
 typedef enum {
   ND_ADD,
@@ -74,16 +74,18 @@ struct Node {
   // func
   char *name;
   bool is_func;
-  Node *args[6];
+  Node *args;
+  size_t argc;
+  Var *locals;
 
   Node *next;
 };
 
-struct LVar {
+struct Var {
   int offset;
   int len;
   char *name;
-  LVar *next;
+  Var *next;
 };
 
 typedef struct Segment Segment;
@@ -97,7 +99,6 @@ struct Program {
   int linenum;
   Token *tok;
   Segment *head;
-  LVar *locals;
 };
 
 // Function Declarations
