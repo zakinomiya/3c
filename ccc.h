@@ -74,6 +74,7 @@ struct Node {
   // func
   char *name;
   bool is_func;
+  Node *args[6];
 
   Node *next;
 };

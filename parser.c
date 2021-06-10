@@ -120,7 +120,7 @@ static Node *primary(Token **token) {
     lvar = calloc(1, sizeof(LVar));
     lvar->len = (*token)->len;
     lvar->name = (*token)->str;
-    lvar->offset = 8;
+    lvar->offset = 48;
 
     if (locals) {
       lvar->next = locals;

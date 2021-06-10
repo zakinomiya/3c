@@ -191,21 +191,14 @@ assert 11 "main (){
   return a;
 }
 "
-assert 11 "
+assert 13 "
 fn_test() {
-  b = 0;
+  b = 13;
   return b;
 }
 
 main (){
-  a = 0;
-  fn_test();
-  for (;;) {
-    a = a + 1;
-    if (a==11) {
-      return a;
-    }
-  }
+  a = fn_test();
   return a;
 }
 

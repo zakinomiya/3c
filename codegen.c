@@ -4,6 +4,28 @@
 #include "ccc.h"
 
 void gen(Node *node);
+void print_comment(char *fmt, ...);
+static Node *current_seg;
+
+// get register name in accordance with the x86-64 calling convention
+static char *get_register(int i) {
+  switch (i) {
+    case 1:
+      return "rdi";
+    case 2:
+      return "rsi";
+    case 3:
+      return "rdx";
+    case 4:
+      return "rcx";
+    case 5:
+      return "r8";
+    case 6:
+      return "r9";
+    default:
+      error("Use stack!");
+  };
+}
 
 static int count() {
   static int cnt = 0;
@@ -11,19 +33,30 @@ static int count() {
   return cnt;
 }
 
-void print_main() {
-  printf("  .intel_syntax noprefix\n");
-  printf("  .global main\n");
-  printf("main:\n");
-}
-
-void print_prologue(int offset) {
+void print_prologue(Node *node) {
+  print_comment("Prologue\n");
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, %d\n", offset);
+  printf("  sub rsp, %d\n",
+         (int)(8 * sizeof(node->args) / sizeof(node->args[0])));
+}
+
+void push_args(Node **args) {
+  int size = sizeof(args) / sizeof(args[0]);
+  int i = 0;
+  for (Node *node = args[i]; i < size; i++) {
+    print_comment(" %s \n", node->name);
+    if (i <= 5) {
+      printf("  mov %s, %d\n", get_register(i + 1), node->val);
+    } else {
+      // for the future use
+      printf("  push %d\n", node->val);
+    }
+  }
 }
 
 void print_epilogue() {
+  printf(".L.return.%s:\n", current_seg->name);
   printf("  mov rsp, rbp\n");
   printf("  pop rbp\n");
   printf("  ret\n");
@@ -35,7 +68,7 @@ void gen_lval(Node *node) {
     error("Invalid syntax. Assignment needed");
   }
 
-  // rax now has to the base pointer address
+  // rax now has the base pointer address
   printf("  mov rax, rbp\n");
   // subtract the node offset from the rax(base) registre
   // rax now has the address to the lval
@@ -89,12 +122,6 @@ void print_comment(char *fmt, ...) {
   va_end(ap);
 }
 
-void gen_func(Node *node) {
-  printf(".L.fn.%s:\n", node->name);
-  gen(node->body);
-  printf("  ret\n");
-}
-
 void gen(Node *node) {
   if (!node) {
     print_comment("# No node found");
@@ -106,14 +133,11 @@ void gen(Node *node) {
       print_comment("# enter function block\n");
       if (memcmp(node->name, "main", 4) == 0) {
         print_comment("# main\n");
-        // printf("main:\n");
         gen(node->body);
-        printf("  jmp .L.return\n");
+        printf("  jmp .L.return.main\n");
         return;
       }
 
-      print_comment("# %s\n", node->name);
-      printf(".L.fn.%s:\n", node->name);
       return gen(node->body);
     }
 
@@ -124,21 +148,17 @@ void gen(Node *node) {
   switch (node->kind) {
     case ND_FNCALL: {
       print_comment("FNCALL\n");
+      // print_prologue(8 * sizeof(node->args) / sizeof(Node));
       printf("  call .L.fn.%s\n", node->name);
-      printf("  pop rax\n");
+      printf("  push rax\n");
 
       break;
     }
     case ND_RETURN: {
       print_comment("RETURN\n");
-      gen(node->lhs);
+      if (node->lhs) gen(node->lhs);
       printf("  pop rax\n");
-      // printf("  ret\n");
-
-      printf("  jmp .L.return\n");
-      // printf("  mov rsp, rbp\n");
-      // printf("  pop rbp\n");
-      // printf("  ret\n");
+      printf("  jmp .L.return.%s\n", current_seg->name);
       break;
     }
     case ND_IF: {
@@ -298,25 +318,43 @@ void gen(Node *node) {
   printf("  push rax\n");
 }
 
-void codegen(Program *prog) {
-  print_main();
+static void gen_func(Segment *seg) {
+  for (Segment *cur_seg = seg; cur_seg; cur_seg = cur_seg->next) {
+    Node *seg_head = cur_seg->contents;
 
-  print_prologue(16);
+    if (!seg_head->is_func) continue;
 
-  Segment *cur_seg = prog->head;
-  while (cur_seg) {
-    Node *cur_nd = cur_seg->contents;
+    current_seg = seg_head;
 
     printf("# ---- AST ----\n");
-    check_ast(cur_nd);
+    check_ast(seg_head);
     printf("# -------------\n");
 
-    gen(cur_nd);
-    printf("  pop rax\n");
+    if (memcmp(seg_head->name, "main", 4) == 0) {
+      printf("%s:\n", seg_head->name);
+    } else {
+      printf(".L.fn.%s:\n", seg_head->name);
+    }
 
-    cur_seg = cur_seg->next;
+    print_prologue(seg_head);
+
+    printf("  movq rdi, [rbp - %d]\n", 8);
+    printf("  movq rsi, [rbp - %d]\n", 16);
+    printf("  movq rdx, [rbp - %d]\n", 24);
+    printf("  movq rcx, [rbp - %d]\n", 32);
+    printf("  movq r8,  [rbp - %d]\n", 40);
+    printf("  movq r9,  [rbp - %d]\n", 48);
+
+    gen(seg_head);
+    print_epilogue();
   }
+}
 
-  printf(".L.return:\n");
-  print_epilogue();
+void codegen(Program *prog) {
+  printf("    .intel_syntax noprefix\n\n");
+  printf("    .global main\n");
+  printf(".text\n");
+
+  Segment *cur_seg = prog->head;
+  gen_func(cur_seg);
 }
