@@ -71,26 +71,32 @@ struct Node {
   Node *init;
   Node *inc;
 
-  // func
-  char *name;
-  bool is_func;
-  Node *args;
-  size_t argc;
-  Var *locals;
+  // funcall
+  Node *params;
 
   Node *next;
 };
 
+// TODO split function from Node and put it into Var
+// Node -> describe code structure
+// Var  -> symbols with values
 struct Var {
   int offset;
   int len;
   char *name;
   Var *next;
+
+  // func
+  bool is_func;
+  Node *body;
+  Node *args;
+  size_t argc;
+  Var *locals;
 };
 
 typedef struct Segment Segment;
 struct Segment {
-  Node *contents;
+  Var *contents;
   Segment *next;
 };
 

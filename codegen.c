@@ -5,7 +5,7 @@
 
 void gen(Node *node);
 void print_comment(char *fmt, ...);
-static Node *current_seg;
+static Var *current_func;
 
 // get register name in accordance with the x86-64 calling convention
 static char *get_register(int i) {
@@ -33,29 +33,15 @@ static int count() {
   return cnt;
 }
 
-void print_prologue(Node *node) {
+void print_prologue(Var *func) {
   print_comment("Prologue\n");
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, %d\n", (int)(8 * node->argc));
-}
-
-void push_args(Node **args) {
-  int size = sizeof(args) / sizeof(args[0]);
-  int i = 0;
-  for (Node *node = args[i]; i < size; i++) {
-    print_comment(" %s \n", node->name);
-    if (i <= 5) {
-      printf("  mov %s, %d\n", get_register(i + 1), node->val);
-    } else {
-      // for the future use
-      printf("  push %d\n", node->val);
-    }
-  }
+  printf("  sub rsp, %d\n", (int)(8 * func->argc));
 }
 
 void print_epilogue() {
-  printf(".L.return.%s:\n", current_seg->name);
+  printf(".L.return.%s:\n", current_func->name);
   printf("  mov rsp, rbp\n");
   printf("  pop rbp\n");
   printf("  ret\n");
@@ -86,7 +72,6 @@ void check_ast(Node *node) {
   int nest_c = count();
   printf("# node kind is %s\n", strndk(node->kind));
   printf("# node str is %s\n", node->str);
-  printf("# node name is %s\n", node->name);
   printf("# node val is %d\n", node->val);
 
   if (node->body) {
@@ -128,17 +113,17 @@ void gen(Node *node) {
   }
 
   if (node->kind == ND_BLOCK) {
-    if (node->is_func) {
-      print_comment("# enter function block\n");
-      if (memcmp(node->name, "main", 4) == 0) {
-        print_comment("# main\n");
-        gen(node->body);
-        printf("  jmp .L.return.main\n");
-        return;
-      }
+    // if (node->is_func) {
+    //   print_comment("# enter function block\n");
+    //   if (memcmp(node->name, "main", 4) == 0) {
+    //     print_comment("# main\n");
+    //     gen(node->body);
+    //     printf("  jmp .L.return.main\n");
+    //     return;
+    //   }
 
-      return gen(node->body);
-    }
+    //   return gen(node->body);
+    // }
 
     print_comment("# other block type\n");
     return gen(node->body);
@@ -148,7 +133,7 @@ void gen(Node *node) {
     case ND_FNCALL: {
       print_comment("FNCALL\n");
       // print_prologue(8 * sizeof(node->args) / sizeof(Node));
-      printf("  call .L.fn.%s\n", node->name);
+      printf("  call .L.fn.%s\n", node->str);
       printf("  push rax\n");
 
       break;
@@ -157,7 +142,7 @@ void gen(Node *node) {
       print_comment("RETURN\n");
       if (node->lhs) gen(node->lhs);
       printf("  pop rax\n");
-      printf("  jmp .L.return.%s\n", current_seg->name);
+      printf("  jmp .L.return.%s\n", current_func->name);
       break;
     }
     case ND_IF: {
@@ -319,14 +304,14 @@ void gen(Node *node) {
 
 static void gen_func(Segment *seg) {
   for (Segment *cur_seg = seg; cur_seg; cur_seg = cur_seg->next) {
-    Node *seg_head = cur_seg->contents;
+    Var *seg_head = cur_seg->contents;
 
     if (!seg_head->is_func) continue;
 
-    current_seg = seg_head;
+    current_func = seg_head;
 
     printf("# ---- AST ----\n");
-    check_ast(seg_head);
+    check_ast(seg_head->body);
     printf("# -------------\n");
 
     if (memcmp(seg_head->name, "main", 4) == 0) {
@@ -344,7 +329,7 @@ static void gen_func(Segment *seg) {
     printf("  movq r8,  [rbp - %d]\n", 40);
     printf("  movq r9,  [rbp - %d]\n", 48);
 
-    gen(seg_head);
+    gen(seg_head->body);
     print_epilogue();
   }
 }

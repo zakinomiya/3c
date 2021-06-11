@@ -98,16 +98,15 @@ static Var *find_var(Token *tok) {
 static Node *funcall(Token **token) {
   Node *node = calloc(1, sizeof(Node));
   node->kind = ND_FNCALL;
-  node->name = (*token)->str;
-  node->argc = 0;
+  node->str = (*token)->str;
   next(token);
   expect(token, "(");
 
   while (!equal(*token, ")")) {
-    if (node->args) {
-      node->args->next = assign(token);
+    if (node->params) {
+      node->params->next = assign(token);
     } else {
-      node->args = assign(token);
+      node->params = assign(token);
     }
   }
 
@@ -358,27 +357,27 @@ static Node *stmt(Token **token) {
 // ToBe: function-definition = ident "(" ident? ("," ident)?  ")" "{"
 // compound-stmt
 // AsIs: function-definition = ident "("")" "{" compound-stmt
-Node *function_def(Token **token) {
+Var *function_def(Token **token) {
   if ((*token)->kind != TK_IDENT) {
     error("Failed to parse");
   }
 
   Node *node = calloc(1, sizeof(Node));
-  node->name = (*token)->str;
-  node->str = (*token)->str;
   node->kind = ND_BLOCK;
-  node->is_func = true;
-  node->argc = 6;
+
+  Var *func = calloc(1, sizeof(Var));
+  func->name = (*token)->str;
+  func->is_func = true;
+  func->argc = 6;
 
   next(token);
-
   expect(token, "(");
 
   if (!equal(*token, ")")) {
-    if (node->args) {
-      node->args->next = expect_ident(token);
+    if (func->args) {
+      func->args->next = expect_ident(token);
     } else {
-      node->args = expect_ident(token);
+      func->args = expect_ident(token);
     }
 
     int i = 0;
@@ -388,22 +387,22 @@ Node *function_def(Token **token) {
       }
 
       next(token);
-      node->args->next = expect_ident(token);
-      node->argc += i;
+      func->args->next = expect_ident(token);
+      func->argc += i;
     }
   }
 
   expect(token, ")");
   expect(token, "{");
 
-  node->body = compound_stmt(token);
-  node->locals = locals;
+  func->body = compound_stmt(token);
+  func->locals = locals;
   locals = NULL;
-  return node;
+  return func;
 }
 
 // program = function-definition
-Node *program(Token **token) { return function_def(token); }
+Var *program(Token **token) { return function_def(token); }
 
 void parse(Program **prog) {
   Program *p = *prog;
