@@ -73,6 +73,7 @@ struct Node {
 
   // funcall
   Node *params;
+  Node *nextp;
 
   Node *next;
 };

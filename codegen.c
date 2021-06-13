@@ -93,6 +93,11 @@ void check_ast(Node *node) {
     printf("#      NEXT \n");
     check_ast(node->next);
   }
+
+  if (node->params) {
+    printf("#      PARAMS \n");
+    check_ast(node->params);
+  }
   return;
 }
 
@@ -107,32 +112,24 @@ void print_comment(char *fmt, ...) {
 }
 
 void gen(Node *node) {
-  if (!node) {
-    print_comment("# No node found");
-    return;
-  }
-
   if (node->kind == ND_BLOCK) {
-    // if (node->is_func) {
-    //   print_comment("# enter function block\n");
-    //   if (memcmp(node->name, "main", 4) == 0) {
-    //     print_comment("# main\n");
-    //     gen(node->body);
-    //     printf("  jmp .L.return.main\n");
-    //     return;
-    //   }
-
-    //   return gen(node->body);
-    // }
-
-    print_comment("# other block type\n");
     return gen(node->body);
   }
 
   switch (node->kind) {
     case ND_FNCALL: {
       print_comment("FNCALL\n");
-      // print_prologue(8 * sizeof(node->args) / sizeof(Node));
+
+      int i = 0;
+      for (Node *params = node->params; params; params = params->nextp) {
+        i++;
+        gen(params);
+      }
+
+      while (i > 0) {
+        printf("  pop %s\n", get_register(i));
+        i--;
+      }
       printf("  call .L.fn.%s\n", node->str);
       printf("  push rax\n");
 
@@ -153,16 +150,22 @@ void gen(Node *node) {
       printf("  cmp rax, 1\n");
 
       printf("  je .L.end.%d\n", c);
-      // if (node->els) {
       printf("  jne .L.else.%d\n", c);
 
       printf(".L.end.%d:\n", c);
       gen(node->then);
+      printf("  jmp .L.rest.%d\n", c);
 
       printf(".L.else.%d:\n", c);
       if (node->els) {
         gen(node->els);
       }
+
+      printf(".L.rest.%d:\n", c);
+      if (node->next) {
+        gen(node->next);
+      }
+
       break;
     }
     case ND_FOR: {
@@ -315,19 +318,18 @@ static void gen_func(Segment *seg) {
     printf("# -------------\n");
 
     if (memcmp(seg_head->name, "main", 4) == 0) {
-      printf("%s:\n", seg_head->name);
+      printf("\n%s:\n", seg_head->name);
+      print_prologue(seg_head);
     } else {
-      printf(".L.fn.%s:\n", seg_head->name);
+      printf("\n.L.fn.%s:\n", seg_head->name);
+      print_prologue(seg_head);
+      printf("  movq  [rbp - %d], rdi\n", 8);
+      printf("  movq  [rbp - %d], rsi\n", 16);
+      printf("  movq  [rbp - %d], rdx\n", 24);
+      printf("  movq  [rbp - %d], rcx\n", 32);
+      printf("  movq  [rbp - %d], r8\n", 40);
+      printf("  movq  [rbp - %d], r9\n", 48);
     }
-
-    print_prologue(seg_head);
-
-    printf("  movq rdi, [rbp - %d]\n", 8);
-    printf("  movq rsi, [rbp - %d]\n", 16);
-    printf("  movq rdx, [rbp - %d]\n", 24);
-    printf("  movq rcx, [rbp - %d]\n", 32);
-    printf("  movq r8,  [rbp - %d]\n", 40);
-    printf("  movq r9,  [rbp - %d]\n", 48);
 
     gen(seg_head->body);
     print_epilogue();

@@ -85,7 +85,7 @@ static Var *find_var(Token *tok) {
     }
   }
 
-  for (Var *var = locals; var; var = var->next) {
+  for (Var *var = globals; var; var = var->next) {
     if (var->len == tok->len && !memcmp(tok->str, var->name, tok->len)) {
       return var;
     }
@@ -102,11 +102,12 @@ static Node *funcall(Token **token) {
   next(token);
   expect(token, "(");
 
-  while (!equal(*token, ")")) {
-    if (node->params) {
-      node->params->next = assign(token);
-    } else {
-      node->params = assign(token);
+  if (!equal(*token, ")")) {
+    Node *p = assign(token);
+    node->params = p;
+    while (equal(*token, ",")) {
+      next(token);
+      p = p->nextp = assign(token);
     }
   }
 
@@ -150,8 +151,6 @@ static Node *primary(Token **token) {
   if (equal(*token, "(")) {
     next(token);
     Node *node = expr(token);
-    next(token);
-    next(token);
     expect(token, ")");
     return node;
   }
@@ -179,10 +178,10 @@ static Node *mul(Token **token) {
 
   if (equal(*token, "*")) {
     next(token);
-    node = new_node(ND_MUL, "*", node, unary(token));
+    node = new_node(ND_MUL, "*", node, mul(token));
   } else if (equal(*token, "/")) {
     next(token);
-    node = new_node(ND_DIV, "/", node, unary(token));
+    node = new_node(ND_DIV, "/", node, mul(token));
   }
   return node;
 }
@@ -379,16 +378,15 @@ Var *function_def(Token **token) {
     } else {
       func->args = expect_ident(token);
     }
+    func->argc++;
 
-    int i = 0;
     while (equal(*token, ",")) {
-      if (++i > 128) {
+      if (++func->argc > 128) {
         error("too many arguments for a function");
       }
 
       next(token);
       func->args->next = expect_ident(token);
-      func->argc += i;
     }
   }
 

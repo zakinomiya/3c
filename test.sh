@@ -8,7 +8,6 @@ assert() {
   test_file_name="tmp_${CASENUM}.s"
   CASENUM=$((CASENUM+1))
 
-  printf "Code: ${input}\n"
   ./ccc "${input}" > ${test_file_name}
   #./ccc "${input}" 
 
@@ -16,15 +15,25 @@ assert() {
   ./tmp 
   actual="$?"
 if [ "$actual" = "$expected" ]; then
-    echo "$input => $actual"
-    echo "OK"
+    echo "Case: $CASENUM"
+    echo " => OK"
     #rm ./${test_file_name}
   else 
-    echo "$expected expected, but got $actual" echo "Test Failed"
+    echo "---- Failed ----"
+    echo " Case:     ${CASENUM}"
+    echo " Expected: ${expected}" 
+    echo " Got:      ${actual}" 
+    echo "----- Code -----"
+    printf "${input}\n"
+    echo "----------------"
     exit 1
   fi
 }
 
+assert 5 "main () {
+  a = ( 2 * 2 ) + 1;
+  return a;
+}"
 assert 5 "main () {
   a=1;
   1+4; 
@@ -219,12 +228,112 @@ main (){
   return a;
 }
 "
-assert 11 "
-fn_test(a, b) {
-  return;
+assert 10 "
+echo(a) {
+  return a;
 }
 
 main (){
-  return 11;
+  return echo(10);
 }
 "
+assert 6 "
+sum(a, b, c) {
+  return a + b + c;
+}
+
+main (){
+  return sum(1, 2, 3);
+}
+"
+assert 3 "
+sum(a, b, c) {
+  return a + b + c;
+}
+
+main (){
+  return sum(1, 1, 1);
+}
+
+"
+assert 45 "
+sum(a, b, c) {
+  return a + b + c;
+}
+
+main (){
+  a = sum(1,2,3);
+  b = sum(4,5,6);
+  c = sum(7,8,9);
+  return sum(a,b,c);
+}
+"
+
+assert 45 "
+sum(a, b, c) {
+  return a + b + c;
+}
+
+main (){
+  return sum(sum(1,2,3),sum(4,5,6),sum(7,8,9));
+}
+"
+
+assert 27 "
+mul(a, b, c) {
+  return a * b * c;
+}
+
+main () {
+  return mul(3, 3, 3);
+}
+"
+
+assert $((2160 % 256)) "
+sum(a, b, c) {
+  return a + b + c;
+}
+
+mul(a, b, c) {
+  return a * b * c;
+}
+
+main (){
+  a = sum(1,2,3);
+  b = sum(4,5,6);
+  c = sum(7,8,9);
+  return mul(a,b,c);
+}
+"
+
+assert 27 "
+sum (a, b, c) {
+  return a + b + c;
+}
+
+nine() {
+  return 9;
+}
+
+main () {
+  return sum(nine(), nine(), nine());
+}
+"
+
+assert 100 "
+sum(a) {
+  b = 0;
+  if (a < 100) {
+    b = a;
+  } else {
+    return a;
+  }
+
+  return sum(b + 1);
+}
+
+main (){
+  return sum(1);
+}
+"
+
