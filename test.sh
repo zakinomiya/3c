@@ -320,20 +320,25 @@ main () {
 }
 "
 
-assert 100 "
-sum(a) {
-  b = 0;
-  if (a < 100) {
-    b = a;
-  } else {
+assert 0 "
+fibonacci(a) {
+  if (a <= 1) {
     return a;
   }
 
-  return sum(b + 1);
+  return fibonacci(a - 1) + fibonacci(a - 2);
 }
 
 main (){
-  return sum(1);
+  if (fibonacci(2) != 1) {
+    return 1;
+  }
+
+  if (fibonacci(9) != 34) {
+    return 1;
+  }
+
+  return 0;
 }
 "
 

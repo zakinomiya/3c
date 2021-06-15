@@ -217,9 +217,7 @@ void gen(Node *node) {
       break;
     case ND_LVAR:
       print_comment("LVAR\n");
-      // if (node->is_func) {
-      //  return gen_func(node);
-      //}
+
       // get the value of the local variable and push it to the stack
       // This case is always read after ND_ASSIGN is read beacause of the rule
       // of the tree structure.
@@ -234,11 +232,6 @@ void gen(Node *node) {
       // push the value in the rax to the stack
       printf("  push rax\n");
       break;
-      // case ND_FNCALL:
-      //  printf("  call .L.fn.%s:\n", node->name);
-      //  printf("  mov rax, eax\n");
-      //  printf("  push rax\n");
-      //  return;
   }
 
   if (node->next) {
