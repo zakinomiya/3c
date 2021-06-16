@@ -166,10 +166,23 @@ static Node *unary(Token **token) {
   if (equal(*token, "+")) {
     next(token);
     return primary(token);
-  } else if (equal(*token, "-")) {
+  } 
+
+  if (equal(*token, "-")) {
     next(token);
     return new_node(ND_SUB, "-", new_node_num(0), primary(token));
+  } 
+
+  if (equal(*token, "*")){
+    next(token);
+    return new_node(ND_DEREF, "*",  unary(token),new_node_num(0));
   }
+
+  if (equal(*token, "&")){
+    next(token);
+    return new_node(ND_ADDR, "&",  unary(token), new_node_num(0));
+  }
+
   return primary(token);
 }
 

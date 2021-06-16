@@ -342,3 +342,12 @@ main (){
 }
 "
 
+assert 3 "
+main() {
+  x = 3;
+  y = &x;
+
+  return *y;
+}
+"
+

@@ -135,6 +135,20 @@ void gen(Node *node) {
 
       break;
     }
+
+    case ND_ADDR:
+      print_comment("ADDR\n");
+
+      gen_lval(node->lhs);
+      break;
+    case ND_DEREF:
+      print_comment("DEREF\n");
+
+      gen(node->lhs);
+      printf("  pop rax\n");
+      printf("  mov rax, [rax]\n");
+      printf("  push rax\n");
+      break;
     case ND_RETURN: {
       print_comment("RETURN\n");
       if (node->lhs) gen(node->lhs);

@@ -22,4 +22,8 @@ test: ccc
 clean:
 	rm -f tmp* ccc *.o core || true
 
+run: ccc
+	./test.sh
+	
+
 .PHONY: test clean
