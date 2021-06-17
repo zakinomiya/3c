@@ -44,6 +44,7 @@ typedef enum {
   TK_IF,
   TK_FOR,
   TK_WHILE,
+  TK_TYPE,
 } TokenKind;
 
 // Struct definitions

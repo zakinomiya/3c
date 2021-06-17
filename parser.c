@@ -116,15 +116,12 @@ static Node *funcall(Token **token) {
 }
 
 static Node *expect_ident(Token **token) {
-  if (equal((*token)->next, "(")) {
-    return funcall(token);
-  }
-
   Node *node = calloc(1, sizeof(Node));
   node->kind = ND_LVAR;
   node->str = (*token)->str;
 
   Var *var = find_var(*token);
+
   if (var) {
     next(token);
     node->offset = var->offset;
@@ -156,6 +153,9 @@ static Node *primary(Token **token) {
   }
 
   if ((*token)->kind == TK_IDENT) {
+    if (equal((*token)->next, "(")) {
+      return funcall(token);
+    }
     return expect_ident(token);
   }
 
@@ -259,7 +259,9 @@ static Node *assign(Token **token) {
   return node;
 }
 
-static Node *expr(Token **token) { return assign(token); }
+static Node *expr(Token **token) {
+  return assign(token); 
+}
 
 // compound-stmt = stmt* "}"
 static Node *compound_stmt(Token **token) {
@@ -275,14 +277,38 @@ static Node *compound_stmt(Token **token) {
   return node;
 }
 
+// vardef = "int" ( ident | assign ) 
+static Node *vardef(Token **token) {
+  Node *node;
+
+  if (equal(*token, "int")) {
+    next(token);
+    if (equal((*token)->next, "=")) {
+      node = assign(token);
+    } else {
+      node = expect_ident(token);
+    }
+    return node;
+  }
+
+  error("unknown type notation: %s\n", (*token)->str);
+}
+
 // stmt = "return" expr ";"
 //      | "{" compound-stmt
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //      | "while" "(" expr ")" stmt
+//      | vardef ";"
 //      | expr-stmt
 static Node *stmt(Token **token) {
   Node *node;
+
+  if ((*token)->kind == TK_TYPE) {
+    node = vardef(token);
+    expect(token, ";");
+    return node;
+  }
 
   if (equal(*token, "return")) {
     next(token);
@@ -342,7 +368,7 @@ static Node *stmt(Token **token) {
     node->kind = ND_FOR;
 
     if (!equal(*token, ";")) {
-      node->init = expr(token);
+      node->init = vardef(token);
     }
     expect(token, ";");
 
@@ -359,6 +385,10 @@ static Node *stmt(Token **token) {
     node->then = stmt(token);
 
     return node;
+  }
+
+  if ((*token)->kind == TK_IDENT && !find_var(*token)) {
+    error("variable %s not declared\n", (*token)->str);
   }
 
   node = expr(token);
@@ -386,10 +416,11 @@ Var *function_def(Token **token) {
   expect(token, "(");
 
   if (!equal(*token, ")")) {
+    Node *arg = vardef(token);
     if (func->args) {
-      func->args->next = expect_ident(token);
+      func->args->next = arg;
     } else {
-      func->args = expect_ident(token);
+      func->args = arg;
     }
     func->argc++;
 
@@ -399,7 +430,7 @@ Var *function_def(Token **token) {
       }
 
       next(token);
-      func->args->next = expect_ident(token);
+      func->args->next = vardef(token);
     }
   }
 

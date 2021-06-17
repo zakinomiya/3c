@@ -31,11 +31,12 @@ if [ "$actual" = "$expected" ]; then
 }
 
 assert 5 "main () {
-  a = ( 2 * 2 ) + 1;
+  int a = ( 2 * 2 ) + 1;
   return a;
 }"
+
 assert 5 "main () {
-  a=1;
+  int a=1;
   1+4; 
 }"
 assert 5 "main () {
@@ -43,11 +44,11 @@ assert 5 "main () {
 }
 "
 assert 5 "main () {
-  foo=2;
+  int foo=2;
   foo+3;
 }"
 assert 6 "main () {
-  foo=1; 
+  int foo=1; 
   foo = foo +4;
   return 1 + foo;
 }
@@ -57,20 +58,20 @@ assert 10 "main () {
 }
 "
 assert 7 "main() {
- a = 3;
- b = 4;
+ int  a = 3;
+ int b = 4;
  return a + b;
 }
 "
 assert 15 "main () {
- foo = 10;
- bar = 5;
+ int foo = 10;
+ int bar = 5;
  return foo + bar;
 }
 "
 assert 10 "main () {
- foo = 10;
- bar = 0;
+ int foo = 10;
+ int bar = 0;
  return foo + bar;
 }
 "
@@ -100,8 +101,8 @@ assert 10 "main () {
   }
 }"
 assert 5 "main() {
-  a = 5;
-  b = 0;
+  int a = 5;
+  int b = 0;
   if (a>=b) {
     return a;
   } else {
@@ -109,8 +110,8 @@ assert 5 "main() {
   }
 }"
 assert 0 "main() {
-  a = 5;
-  b = 0;
+  int a = 5;
+  int b = 0;
   if (1==0) {
     return a;
   } else {
@@ -118,8 +119,8 @@ assert 0 "main() {
   }
 }"
 assert 6 "main () {
-  a = 5;
-  b = 0;
+  int a = 5;
+  int b = 0;
   if (a>=b) {
     return a + 1;
   } else {
@@ -127,8 +128,8 @@ assert 6 "main () {
   }
 }"
 assert 0 "main () {
-  a = 5;
-  b = 1;
+  int a = 5;
+  int b = 1;
   if (1==0) {
     return a;
   } else if (0==0) {
@@ -141,7 +142,7 @@ assert 10 "main () {
   if (1==0) {
     return a;
   } else if (0==0) {
-    b = 11; 
+    int b = 11; 
     return b-1;
   } else {
     return 10;
@@ -159,7 +160,7 @@ assert 5 "main() {
 }
 "
 assert 10 "main() {
-  a = 1;
+  int a = 1;
   while (a < 10) {
     a = a +1;
   }
@@ -167,14 +168,14 @@ assert 10 "main() {
 }
 "
 assert 11 "main (){
-  for (a=0;a<11;a=a+1) {
+  for (int a=0;a<11;a=a+1) {
     a = a;
   }
   return a;
 }
 "
 assert 11 "main (){
-  a = 0;
+  int a = 0;
   for (;a<11;a=a+1) {
     a = a;
   }
@@ -182,7 +183,7 @@ assert 11 "main (){
 }
 "
 assert 11 "main (){
-  a = 0;
+  int a = 0;
   for (;a < 11;) {
     a = a + 1;
   }
@@ -190,7 +191,7 @@ assert 11 "main (){
 }
 "
 assert 11 "main (){
-  a = 0;
+  int a = 0;
   for (;;) {
     a = a + 1;
     if (a==11) {
@@ -202,12 +203,12 @@ assert 11 "main (){
 "
 assert 14 "
 fn_test() {
-  b = 13;
+  int b = 13;
   return b;
 }
 
 main (){
-  a = 1;
+  int a = 1;
   a = a +  fn_test();
   return a;
 }
@@ -215,7 +216,7 @@ main (){
 
 assert 11 "
 fn_test() {
-  b = 0;
+  int b = 0;
   while (b < 10) {
     b = b + 1;
   }
@@ -223,13 +224,13 @@ fn_test() {
 }
 
 main (){
-  a = 1;
+  int a = 1;
   a = a +  fn_test();
   return a;
 }
 "
 assert 10 "
-echo(a) {
+echo(int a) {
   return a;
 }
 
@@ -238,7 +239,7 @@ main (){
 }
 "
 assert 6 "
-sum(a, b, c) {
+sum(int a, int b, int c) {
   return a + b + c;
 }
 
@@ -247,7 +248,7 @@ main (){
 }
 "
 assert 3 "
-sum(a, b, c) {
+sum(int a, int b, int c) {
   return a + b + c;
 }
 
@@ -257,20 +258,20 @@ main (){
 
 "
 assert 45 "
-sum(a, b, c) {
+sum(int a, int b, int c) {
   return a + b + c;
 }
 
 main (){
-  a = sum(1,2,3);
-  b = sum(4,5,6);
-  c = sum(7,8,9);
+  int a = sum(1,2,3);
+  int b = sum(4,5,6);
+  int c = sum(7,8,9);
   return sum(a,b,c);
 }
 "
 
 assert 45 "
-sum(a, b, c) {
+sum(int a, int b, int c) {
   return a + b + c;
 }
 
@@ -280,7 +281,7 @@ main (){
 "
 
 assert 27 "
-mul(a, b, c) {
+mul(int a, int b, int c) {
   return a * b * c;
 }
 
@@ -290,24 +291,24 @@ main () {
 "
 
 assert $((2160 % 256)) "
-sum(a, b, c) {
+sum(int a, int b, int c) {
   return a + b + c;
 }
 
-mul(a, b, c) {
+mul(int a, int b, int c) {
   return a * b * c;
 }
 
 main (){
-  a = sum(1,2,3);
-  b = sum(4,5,6);
-  c = sum(7,8,9);
+  int a = sum(1,2,3);
+  int b = sum(4,5,6);
+  int c = sum(7,8,9);
   return mul(a,b,c);
 }
 "
 
 assert 27 "
-sum (a, b, c) {
+sum(int a, int b, int c) {
   return a + b + c;
 }
 
@@ -321,7 +322,7 @@ main () {
 "
 
 assert 0 "
-fibonacci(a) {
+fibonacci(int a) {
   if (a <= 1) {
     return a;
   }
@@ -344,8 +345,8 @@ main (){
 
 assert 3 "
 main() {
-  x = 3;
-  y = &x;
+  int x = 3;
+  int y = &x;
 
   return *y;
 }
