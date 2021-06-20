@@ -10,6 +10,13 @@ typedef struct Node Node;
 typedef struct Token Token;
 typedef struct Var Var;
 typedef struct Program Program;
+typedef struct Type Type;
+
+typedef enum {
+  TY_INT,
+  TY_PTR,
+} Ty ;
+
 typedef enum {
   ND_ADD,
   ND_SUB,
@@ -44,7 +51,6 @@ typedef enum {
   TK_IF,
   TK_FOR,
   TK_WHILE,
-  TK_TYPE,
 } TokenKind;
 
 // Struct definitions
@@ -60,6 +66,7 @@ struct Node {
   NodeKind kind;
   Node *lhs;
   Node *rhs;
+  Type *ty;
 
   // Block Node
   Node *body;
@@ -81,18 +88,16 @@ struct Node {
   Node *next;
 };
 
-// TODO split function from Node and put it into Var
-// Node -> describe code structure
-// Var  -> symbols with values
 struct Var {
   int offset;
   int len;
   char *name;
   Var *next;
+  Type *ty;
+  Node *body;
 
   // func
   bool is_func;
-  Node *body;
   Node *args;
   size_t argc;
   Var *locals;
@@ -109,6 +114,11 @@ struct Program {
   int linenum;
   Token *tok;
   Segment *head;
+};
+
+struct Type {
+  Ty type;
+  Type *ptr_to;
 };
 
 // Function Declarations

@@ -14,7 +14,7 @@ docker_build:
 		docker build -t "ccc" .
 
 debug:
-		${RUN} gdb ccc core
+		${RUN} gdb ccc core 
 
 test: ccc
 		${RUN} ./test.sh

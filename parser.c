@@ -6,6 +6,36 @@ static Node *stmt(Token **token);
 static Node *expr(Token **token);
 static Node *compound_stmt(Token **token);
 static Node *assign(Token **token);
+static bool equal(Token *tok, char *c);
+static void next(Token **token);
+
+static Ty gettk(char *type) {
+  if (strcmp(type, "int") == 0) {
+    return TY_INT;
+  }
+
+  error("unknown type: %s\n", type);
+}
+
+static Type *gettype(Token **token) {
+  Token *tok = *token;
+  Type *t = calloc(1, sizeof(Type));
+
+  if (tok->kind != TK_IDENT || tok->next->kind != TK_IDENT) {
+    return NULL;
+  }
+
+  if (equal(tok, "*")) { 
+    next(token);
+    t->type = TY_PTR;
+    t->ptr_to = gettype(token);
+  } else {
+    t->type = gettk(tok->str);
+    next(token);
+  }
+
+  return t;
+}
 
 static void next(Token **token) {
   // fprintf(stderr, "%s,", strtk((*token)->kind));
@@ -277,21 +307,24 @@ static Node *compound_stmt(Token **token) {
   return node;
 }
 
-// vardef = "int" ( ident | assign ) 
-static Node *vardef(Token **token) {
-  Node *node;
+// init-declarator= types ( ident | assign ) 
+static Node *init_declarator(Token **token) {
+  Token *tok = *token;
+  Node *node; 
+  Type *ty;
 
-  if (equal(*token, "int")) {
-    next(token);
-    if (equal((*token)->next, "=")) {
-      node = assign(token);
-    } else {
-      node = expect_ident(token);
-    }
-    return node;
+  if (tok->next->kind == TK_IDENT) {
+    ty = gettype(token);
   }
 
-  error("unknown type notation: %s\n", (*token)->str);
+  if (equal((*token)->next, "=")) {
+    node = assign(token);
+  } else {
+    node = expect_ident(token);
+  }
+
+  node->ty = ty;
+  return node;
 }
 
 // stmt = "return" expr ";"
@@ -299,16 +332,11 @@ static Node *vardef(Token **token) {
 //      | "if" "(" expr ")" stmt ("else" stmt)?
 //      | "for" "(" expr? ";" expr? ";" expr? ")" stmt
 //      | "while" "(" expr ")" stmt
-//      | vardef ";"
+//      | types ";"
 //      | expr-stmt
 static Node *stmt(Token **token) {
   Node *node;
-
-  if ((*token)->kind == TK_TYPE) {
-    node = vardef(token);
-    expect(token, ";");
-    return node;
-  }
+  Type *ty = gettype(token);
 
   if (equal(*token, "return")) {
     next(token);
@@ -368,7 +396,7 @@ static Node *stmt(Token **token) {
     node->kind = ND_FOR;
 
     if (!equal(*token, ";")) {
-      node->init = vardef(token);
+      node->init = init_declarator(token);
     }
     expect(token, ";");
 
@@ -387,21 +415,18 @@ static Node *stmt(Token **token) {
     return node;
   }
 
-  if ((*token)->kind == TK_IDENT && !find_var(*token)) {
-    error("variable %s not declared\n", (*token)->str);
-  }
-
   node = expr(token);
+  node->ty = ty;
   expect(token, ";");
   return node;
 }
 
-// ToBe: function-definition = ident "(" ident? ("," ident)?  ")" "{"
-// compound-stmt
-// AsIs: function-definition = ident "("")" "{" compound-stmt
+// function = ident "(" ident? ("," ident)?  ")" "{" compound-stmt
 Var *function_def(Token **token) {
+  //next(token);
+
   if ((*token)->kind != TK_IDENT) {
-    error("Failed to parse");
+    error("Failed to parse. Got %s\n", (*token)->str);
   }
 
   Node *node = calloc(1, sizeof(Node));
@@ -416,7 +441,13 @@ Var *function_def(Token **token) {
   expect(token, "(");
 
   if (!equal(*token, ")")) {
-    Node *arg = vardef(token);
+    Type *ty = gettype(token);
+    if (!ty) {
+      error("function arg needs type declaration\n");
+    }
+
+    Node *arg = expect_ident(token);
+    arg->ty=ty;
     if (func->args) {
       func->args->next = arg;
     } else {
@@ -430,7 +461,13 @@ Var *function_def(Token **token) {
       }
 
       next(token);
-      func->args->next = vardef(token);
+      Type *ty = gettype(token);
+      if (!ty) {
+        error("function arg needs type declaration\n");
+      }
+
+      func->args->next = expect_ident(token);
+      func->args->next->ty = ty;
     }
   }
 
@@ -443,8 +480,29 @@ Var *function_def(Token **token) {
   return func;
 }
 
+// bultin-type = "int"
+// types = ("*")? bultin-type | ident
+// declaration = types ( function | ( ident | assign ) ";" )
+Var *declaration(Token **token) {
+  Token *tok = *token;
+  Var *var = calloc(1, sizeof(Var));
+  var->ty = gettype(token);
+
+  if (equal(tok->next->next, "(")) {
+    Var *v = function_def(token);
+    v->ty = var->ty;
+    return v;
+  } 
+
+  Node *node = init_declarator(token);
+  expect(token, ";");
+  
+  var->body = node;
+  return var; 
+}
+
 // program = function-definition
-Var *program(Token **token) { return function_def(token); }
+Var *program(Token **token) { return declaration(token); }
 
 void parse(Program **prog) {
   Program *p = *prog;

@@ -58,12 +58,6 @@ void tokenize(Token *head, char *p) {
       continue;
     }
 
-    if (startswith(p, "int") && !is_alnum(p[3])) {
-      cur = new_token(TK_TYPE, cur, p, 3);
-      p += 3;
-      continue;
-    }
-
     if ('a' <= *p && *p <= 'z') {
       int i = 0;
       while (is_alnum(*(p + i))) {
