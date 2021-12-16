@@ -345,7 +345,7 @@ static void gen_func(Segment *seg) {
 
 void codegen(Program *prog) {
   printf("    .intel_syntax noprefix\n\n");
-  printf("    .global main\n");
+  printf("    .globl main\n");
   printf(".text\n");
 
   Segment *cur_seg = prog->head;
