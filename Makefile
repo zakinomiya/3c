@@ -5,7 +5,6 @@ D_RUN=docker run --ulimit="core=65536" --rm -v ${PWD}:/ccc -w /ccc
 D_PLATFORM=linux/x86_64
 D_IMAGENAME=ccc
 
-
 RUN=${D_RUN} ccc
 
 $(OBJS): ccc.h
@@ -27,6 +26,5 @@ clean:
 
 run: ccc
 	./test.sh
-	
 
 .PHONY: test clean
